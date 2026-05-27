@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Literature Review Matrix</title>
+  <title>Literature Review Matrix Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
     body { overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -14,16 +15,16 @@
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col justify-center items-center p-4">
 
   <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8">
+    
     <div class="mb-6 text-center">
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Literature Review Matrix Generator</h1>
-      <p class="text-sm text-slate-500 mt-1">Ekstrak otomatis abstrak jurnal langsung ke Google Sheets via Vercel + GAS</p>
+      <p class="text-sm text-slate-500 mt-1">Upload journal PDF or paste abstract directly into your Google Sheets.</p>
+      <div class="mt-2 text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg inline-block border border-amber-100">
+        ⚠️ <strong>Important:</strong> Set your Google Sheet to <strong>"Anyone with the link can edit"</strong>.
+      </div>
     </div>
 
     <div class="space-y-4">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">GAS Web App URL (Backend)</label>
-        <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
-      </div>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -37,12 +38,19 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Teks Abstrak / Isi Jurnal</label>
-        <textarea id="journalText" rows="6" placeholder="Tempelkan teks abstrak jurnal di sini..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDF (Fastest)</label>
+        <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
       </div>
 
-      <button onclick="submitJurnal()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
-        <span>Ekstrak & Masukkan ke Matrix</span>
+      <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 2: Paste Journal Abstract / Text</label>
+        <textarea id="journalText" rows="5" placeholder="Or paste the text here manually if you don't want to upload a file..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+      </div>
+
+      <button onclick="handleProcess()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
+        <span>Extract & Add to Matrix</span>
       </button>
 
       <div id="statusBox" class="hidden p-3 rounded-lg text-sm font-medium text-center transition"></div>
@@ -50,44 +58,98 @@
   </div>
 
   <script>
-    async function submitJurnal() {
-      const gasUrl = document.getElementById('gasUrl').value;
-      const journalText = document.getElementById('journalText').value;
+    // Konfigurasi library PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    // KUNCI URL GAS ANDA DI SINI
+    const CONFIG_GAS_URL = "MASUKKAN_URL_WEB_APP_GAS_ANDA_YANG_BERAKHIRAN_EXEC";
+
+    // Fungsi utama saat tombol diklik
+    async function handleProcess() {
+      const fileInput = document.getElementById('pdfFile');
+      let journalText = document.getElementById('journalText').value;
       const apiKey = document.getElementById('apiKey').value;
       const sheetUrl = document.getElementById('sheetUrl').value;
       const btn = document.getElementById('btnSubmit');
-      const statusBox = document.getElementById('statusBox');
 
-      if (!gasUrl || !journalText || !apiKey || !sheetUrl) {
-        showStatus("Semua kolom wajib diisi!", "error");
+      if (!apiKey || !sheetUrl) {
+        showStatus("API Key and Google Sheets URL are required!", "error");
         return;
       }
 
-      btn.disabled = true;
-      btn.innerText = "Sedang memproses via AI...";
-      statusBox.classList.add('hidden');
+      // Jika user memilih file PDF, kita ekstrak dulu teksnya
+      if (fileInput.files.length > 0) {
+        btn.disabled = true;
+        btn.innerText = "Extracting text from PDF...";
+        try {
+          journalText = await extractTextFromPdf(fileInput.files[0]);
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerText = "Extract & Add to Matrix";
+          showStatus("Failed to read PDF file: " + err, "error");
+          return;
+        }
+      }
 
-      // Memakai fetch() karena menembak dari luar ekosistem Google
+      if (!journalText || journalText.trim() === "") {
+        showStatus("Please upload a PDF or paste some text first!", "error");
+        btn.disabled = false;
+        btn.innerText = "Extract & Add to Matrix";
+        return;
+      }
+
+      // Kirim ke GAS Backend
+      btn.disabled = true;
+      btn.innerText = "Processing via AI...";
+      
       try {
-        const response = await fetch(gasUrl, {
+        await fetch(CONFIG_GAS_URL, {
           method: "POST",
-          mode: "no-cors", // Penting agar tidak terblokir aturan CORS browser
+          mode: "no-cors", 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ journalText, apiKey, sheetUrl })
         });
 
-        // Karena menggunakan mode 'no-cors', browser tidak bisa membaca isi response bodi (opaque),
-        // Namun data tetap dipastikan sampai dan diproses oleh GAS di latar belakang.
         btn.disabled = false;
-        btn.innerText = "Ekstrak & Masukkan ke Matrix";
-        showStatus("Perintah berhasil dikirim! Silakan cek Google Sheets Anda beberapa saat lagi.", "success");
+        btn.innerText = "Extract & Add to Matrix";
+        showStatus("Success! Please check your Google Sheet in a few seconds.", "success");
+        // Reset input
         document.getElementById('journalText').value = "";
+        fileInput.value = "";
 
       } catch (err) {
         btn.disabled = false;
-        btn.innerText = "Ekstrak & Masukkan ke Matrix";
-        showStatus("Gagal mengirim data: " + err, "error");
+        btn.innerText = "Extract & Add to Matrix";
+        showStatus("Failed to communicate with GAS backend: " + err, "error");
       }
+    }
+
+    // Fungsi ajaib untuk membaca teks dari file PDF (Hanya mengambil halaman 1 & 2 untuk menghemat kuota token AI)
+    function extractTextFromPdf(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function() {
+          try {
+            const typedarray = new Uint8Array(this.result);
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let fullText = "";
+            
+            // Batasi maksimal membaca 2 halaman pertama saja agar cepat dan hemat token
+            const pagesToRead = Math.min(pdf.numPages, 2); 
+            
+            for (let i = 1; i <= pagesToRead; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map(item => item.str).join(" ");
+              fullText += pageText + "\n";
+            }
+            resolve(fullText);
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
     }
 
     function showStatus(msg, type) {
