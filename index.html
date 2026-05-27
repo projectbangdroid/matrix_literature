@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Literature Review Matrix</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col justify-center items-center p-4">
+
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8">
+    <div class="mb-6 text-center">
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Literature Review Matrix Generator</h1>
+      <p class="text-sm text-slate-500 mt-1">Ekstrak otomatis abstrak jurnal langsung ke Google Sheets via Vercel + GAS</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">GAS Web App URL (Backend)</label>
+        <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Groq API Key</label>
+          <input type="password" id="apiKey" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Google Sheets URL</label>
+          <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Teks Abstrak / Isi Jurnal</label>
+        <textarea id="journalText" rows="6" placeholder="Tempelkan teks abstrak jurnal di sini..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+      </div>
+
+      <button onclick="submitJurnal()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
+        <span>Ekstrak & Masukkan ke Matrix</span>
+      </button>
+
+      <div id="statusBox" class="hidden p-3 rounded-lg text-sm font-medium text-center transition"></div>
+    </div>
+  </div>
+
+  <script>
+    async function submitJurnal() {
+      const gasUrl = document.getElementById('gasUrl').value;
+      const journalText = document.getElementById('journalText').value;
+      const apiKey = document.getElementById('apiKey').value;
+      const sheetUrl = document.getElementById('sheetUrl').value;
+      const btn = document.getElementById('btnSubmit');
+      const statusBox = document.getElementById('statusBox');
+
+      if (!gasUrl || !journalText || !apiKey || !sheetUrl) {
+        showStatus("Semua kolom wajib diisi!", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Sedang memproses via AI...";
+      statusBox.classList.add('hidden');
+
+      // Memakai fetch() karena menembak dari luar ekosistem Google
+      try {
+        const response = await fetch(gasUrl, {
+          method: "POST",
+          mode: "no-cors", // Penting agar tidak terblokir aturan CORS browser
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ journalText, apiKey, sheetUrl })
+        });
+
+        // Karena menggunakan mode 'no-cors', browser tidak bisa membaca isi response bodi (opaque),
+        // Namun data tetap dipastikan sampai dan diproses oleh GAS di latar belakang.
+        btn.disabled = false;
+        btn.innerText = "Ekstrak & Masukkan ke Matrix";
+        showStatus("Perintah berhasil dikirim! Silakan cek Google Sheets Anda beberapa saat lagi.", "success");
+        document.getElementById('journalText').value = "";
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = "Ekstrak & Masukkan ke Matrix";
+        showStatus("Gagal mengirim data: " + err, "error");
+      }
+    }
+
+    function showStatus(msg, type) {
+      const statusBox = document.getElementById('statusBox');
+      statusBox.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
+      statusBox.innerText = msg;
+      statusBox.classList.add(type === "success" ? 'bg-green-50' : 'bg-red-50', type === "success" ? 'text-green-700' : 'text-red-700');
+    }
+  </script>
+</body>
+</html>
