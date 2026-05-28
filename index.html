@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
   <title>Free Literature Review Matrix Generator | Extract Abstract to Sheets</title>
-  
   <meta name="description" content="Extract journal abstracts, methodology, findings, and research gaps directly into Google Sheets. The ultimate free tool for academic researchers and students.">
-  
   <meta name="keywords" content="literature review matrix generator, abstract extractor, research gap finder, ai journal summarizer, groq api tool">
-  
-  <meta name="google-site-verification" content="xQj027NhdfpgsOzHyufdFKlKCXuYHcPuL5fx15u2Nds" />
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <style>
+    body { overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col justify-center items-center p-4">
 
@@ -41,7 +40,7 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDFs (You can select multiple files)</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
         <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
       </div>
 
@@ -60,59 +59,44 @@
     </div>
   </div>
 
-<div class="w-full max-w-2xl mt-12 pt-6 border-t border-slate-200 text-slate-600 text-sm space-y-6">
-      
-      <h2 class="text-xl font-bold text-slate-900 tracking-tight">Systematic Literature Review Made Easy</h2>
-      <p class="text-slate-500 leading-relaxed">
-        Writing a thesis, dissertation, or research paper requires a comprehensive analysis of existing academic journals. Manually extracting metadata to build a research framework can take hours. This <strong>Free AI Literature Review Matrix Generator</strong> automates the process, allowing you to synthesize multiple study materials instantly into a well-structured database.
-      </p>
-
-      <div class="space-y-5">
-        <div>
-          <h3 class="font-bold text-slate-800 text-base">What is a Literature Review Matrix?</h3>
-          <p class="mt-1 text-slate-500 leading-relaxed">
-            A literature review matrix (or synthesis matrix) is an essential academic tool used to evaluate, compare, and organize research articles. By categorizing key variables such as the author, publication year, methodology, findings, and research gaps side-by-side, researchers can easily identify patterns, contradictions, and areas for future study.
-          </p>
-        </div>
-
-        <div>
-          <h3 class="font-bold text-slate-800 text-base">How does this AI Abstract Extractor work?</h3>
-          <p class="mt-1 text-slate-500 leading-relaxed">
-            This tool uses a decentralized modern web architecture (Headless GAS). When you upload a journal PDF, the open-source <code>PDF.js</code> library extracts the text locally within your browser. Then, advanced language models via the Groq API analyze the metadata and automatically append the structured row into your specified Google Sheet database.
-          </p>
-        </div>
-
-        <div>
-          <h3 class="font-bold text-slate-800 text-base">How to get a Free Groq API Key?</h3>
-          <p class="mt-1 text-slate-500 leading-relaxed">
-            To provide this tool completely free without subscriptions, we adopt the <strong>BYOK (Bring Your Own Key)</strong> model. You can generate a free API token in less than a minute:
-          </p>
-          <ul class="list-disc list-inside mt-2 space-y-1 text-slate-500 pl-2">
-            <li>Visit the official <a href="https://console.groq.com" target="_blank" class="text-indigo-600 hover:underline font-medium">Groq Console</a> and log in with your Google account.</li>
-            <li>Go to the <strong>"API Keys"</strong> section on the left sidebar menu.</li>
-            <li>Click on <strong>"Create API Key"</strong>, give it a name (e.g., Matrix Tool), and copy the generated key string (it starts with <code>gsk_</code>).</li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 class="font-bold text-slate-800 text-base">Is my research data and PDF safe?</h3>
-          <p class="mt-1 text-slate-500 leading-relaxed">
-            Yes, 100%. Your privacy and data confidentiality are fully protected. Your files are never uploaded to our servers; the PDF text extraction happens completely on your local computer. Furthermore, your Groq API Key and Google Sheets URLs are transmitted directly to your personal Google Apps Script cloud, ensuring full data compliance and security.
-          </p>
-        </div>
+  <div class="w-full max-w-2xl mt-12 pt-6 border-t border-slate-200 text-slate-600 text-sm space-y-6">
+    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Systematic Literature Review Made Easy</h2>
+    <p class="text-slate-500 leading-relaxed">
+      Writing a thesis, dissertation, or research paper requires a comprehensive analysis of existing academic journals. Manually extracting metadata to build a research framework can take hours. This <strong>Free AI Literature Review Matrix Generator</strong> automates the process, allowing you to synthesize multiple study materials instantly into a well-structured database.
+    </p>
+    <div class="space-y-5">
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">What is a Literature Review Matrix?</h3>
+        <p class="mt-1 text-slate-500 leading-relaxed">
+          A literature review matrix (or synthesis matrix) is an essential academic tool used to evaluate, compare, and organize research articles. By categorizing key variables such as the author, publication year, methodology, findings, and research gaps side-by-side, researchers can easily identify patterns, contradictions, and areas for future study.
+        </p>
       </div>
-
-      <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
-        <p>© 2026 Literature Review Matrix Generator. Powered by Vercel & Google Apps Script.</p>
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">How does this AI Abstract Extractor work?</h3>
+        <p class="mt-1 text-slate-500 leading-relaxed">
+          This tool uses a decentralized modern web architecture (Headless GAS). When you upload a journal PDF, the open-source <code>PDF.js</code> library extracts the text locally within your browser. Then, advanced language models via the Groq API analyze the metadata and automatically append the structured row into your specified Google Sheet database.
+        </p>
       </div>
-
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">How to get a Free Groq API Key?</h3>
+        <p class="mt-1 text-slate-500 leading-relaxed">
+          To provide this tool completely free without subscriptions, we adopt the <strong>BYOK (Bring Your Own Key)</strong> model. You can generate a free API token in less than a minute by visiting the official Groq Console.
+        </p>
+      </div>
     </div>
-      
+    <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
+      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel & Google Apps Script.</p>
+    </div>
+  </div>
+
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
     // KUNCI URL GAS ANDA DI SINI
     const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbyNHyeDE5ZiJU470IAkSBaOwFK29MUGTzysqFuYrhJqFS4H_HquY7u1kf82v0Jo-3u-0Q/exec";
+
+    // Fungsi pembantu untuk memberikan jeda waktu (sleep)
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     async function handleProcess() {
       const fileInput = document.getElementById('pdfFiles');
@@ -126,38 +110,49 @@
         return;
       }
 
-      // KONDISI A: JIKA USER UPLOAD BANYAK FILE PDF
+      // KONDISI A: MULTIPLE UPLOAD PDF
       if (fileInput.files.length > 0) {
         const totalFiles = fileInput.files.length;
         btn.disabled = true;
         showStatus(`Starting build for ${totalFiles} journals...`, "success");
 
-        // Lakukan perulangan untuk memproses satu per satu file (Antrean sekuensial agar aman dari rate limit Groq)
         for (let i = 0; i < totalFiles; i++) {
           const currentFile = fileInput.files[i];
-          btn.innerText = `[${i+1}/${totalFiles}] Extracting Text...`;
           
+          // 1. Ekstraksi Teks
+          btn.innerText = `[${i+1}/${totalFiles}] Extracting Text...`;
+          let extractedText = "";
           try {
-            const extractedText = await extractTextFromPdf(currentFile);
-            
-            btn.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
-            
-            // Tembak ke Backend GAS Anda
+            extractedText = await extractTextFromPdf(currentFile);
+          } catch (err) {
+            console.error(err);
+            continue; // Lewati ke file berikutnya jika PDF rusak
+          }
+          
+          // 2. Kirim data ke AI via GAS
+          btn.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
+          try {
             await fetch(CONFIG_GAS_URL, {
               method: "POST",
               mode: "no-cors", 
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ journalText: extractedText, apiKey, sheetUrl })
             });
-
           } catch (err) {
             console.error(err);
-            showStatus(`Error processing file ${currentFile.name}: ${err.toString()}`, "error");
-            // Tetap lanjutkan ke file berikutnya meskipun ada 1 file yang gagal
+          }
+
+          // PERBAIKAN UTAMA: Tambahkan jeda waktu 12 detik per file agar aman dari Rate Limit Groq (Kecuali file terakhir)
+          if (i < totalFiles - 1) {
+            let countdown = 12;
+            while (countdown > 0) {
+              btn.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
+              await sleep(1000);
+              countdown--;
+            }
           }
         }
 
-        // Selesai memproses semua file dalam antrean
         btn.disabled = false;
         btn.innerText = "Extract & Add to Matrix";
         showStatus(`Successfully processed all ${totalFiles} journals! Check your Google Sheet.`, "success");
@@ -165,7 +160,7 @@
         return;
       }
 
-      // KONDISI B: JIKA USER PAKAI PASTE MANUAL (HANYA 1 JURNAL)
+      // KONDISI B: PASTE MANUAL
       if (manualText && manualText.trim() !== "") {
         btn.disabled = true;
         btn.innerText = "Processing via AI...";
@@ -188,7 +183,6 @@
         return;
       }
 
-      // Jika dua-duanya kosong
       showStatus("Please upload at least one PDF or paste journal text!", "error");
     }
 
