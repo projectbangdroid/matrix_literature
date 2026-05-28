@@ -6,6 +6,7 @@
   <title>Free Literature Review Matrix Generator | Extract Abstract to Sheets</title>
   <meta name="description" content="Extract journal abstracts, methodology, findings, and research gaps directly into Google Sheets.">
   
+  <!-- Microsoft Clarity Analytics -->
   <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -45,6 +46,15 @@
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Google Sheets URL</label>
           <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
         </div>
+      </div>
+
+      <!-- FITUR BARU: Pilihan Bahasa Output -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Output Language (Hasil Ekstraksi)</label>
+        <select id="targetLanguage" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition bg-white">
+          <option value="Indonesian">Bahasa Indonesia (Default)</option>
+          <option value="English">English (International Standard)</option>
+        </select>
       </div>
 
       <div>
@@ -109,7 +119,6 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    // URL WEB APP GAS ASLI ANDA (TETAP TERJAGA)
     const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbyNHyeDE5ZiJU470IAkSBaOwFK29MUGTzysqFuYrhJqFS4H_HquY7u1kf82v0Jo-3u-0Q/exec";
     
     let isCancelled = false;
@@ -132,6 +141,7 @@
       let manualText = journalTextEl ? journalTextEl.value : "";
       const apiKey = document.getElementById('apiKey').value;
       const sheetUrl = document.getElementById('sheetUrl').value;
+      const targetLanguage = document.getElementById('targetLanguage').value; // Ambil nilai bahasa
       
       const btnSubmit = document.getElementById('btnSubmit');
       const btnStop = document.getElementById('btnStop');
@@ -141,7 +151,6 @@
         return;
       }
 
-      // KONDISI A: MULTIPLE UPLOAD PDF
       if (fileInput && fileInput.files.length > 0) {
         const totalFiles = fileInput.files.length;
         
@@ -180,7 +189,7 @@
               method: "POST",
               mode: "no-cors", 
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ journalText: extractedText, apiKey, sheetUrl })
+              body: JSON.stringify({ journalText: extractedText, apiKey, sheetUrl, targetLanguage }) // Kirim targetLanguage ke GAS
             });
           } catch (err) {
             console.error(err);
@@ -215,7 +224,6 @@
         return;
       }
 
-      // KONDISI B: PASTE MANUAL
       if (manualText && manualText.trim() !== "") {
         btnSubmit.disabled = true;
         btnSubmit.innerText = "Processing via AI...";
@@ -224,7 +232,7 @@
             method: "POST",
             mode: "no-cors", 
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ journalText: manualText, apiKey, sheetUrl })
+            body: JSON.stringify({ journalText: manualText, apiKey, sheetUrl, targetLanguage }) // Kirim targetLanguage ke GAS
           });
           btnSubmit.disabled = false;
           btnSubmit.innerText = "Extract & Add to Matrix";
