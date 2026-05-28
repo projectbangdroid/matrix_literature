@@ -60,10 +60,10 @@
       </div>
 
       <div class="flex gap-3">
-        <button onclick="handleProcess()" id="btnSubmit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
+        <button type="button" onclick="handleProcess()" id="btnSubmit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
           <span>Extract & Add to Matrix</span>
         </button>
-        <button onclick="stopProcess()" id="btnStop" class="hidden bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition justify-center items-center shadow-sm">
+        <button type="button" onclick="stopProcess()" id="btnStop" class="hidden bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition justify-center items-center shadow-sm">
           <span>Stop</span>
         </button>
       </div>
@@ -87,3 +87,196 @@
       <div>
         <h3 class="font-bold text-slate-800 text-base">How does this AI Abstract Extractor work?</h3>
         <p class="mt-1 text-slate-500 leading-relaxed">
+          This tool uses a decentralized modern web architecture (Headless GAS). When you upload a journal PDF, the open-source <code>PDF.js</code> library extracts the text locally within your browser. Then, advanced language models via the Groq API analyze the metadata and automatically append the structured row into your specified Google Sheet database.
+        </p>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-800 text-base">How to get a Free Groq API Key?</h3>
+        <p class="mt-1 text-slate-500 leading-relaxed">
+          To provide this tool completely free without subscriptions, we adopt the <strong>BYOK (Bring Your Own Key)</strong> model. You can generate a free API token in less than a minute by visiting the official Groq Console.
+        </p>
+      </div>
+    </div>
+    <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
+      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel & Google Apps Script.</p>
+    </div>
+  </div>
+
+  <script>
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    } catch (e) {
+      console.error('PDF.js Worker Error:', e);
+    }
+
+    // URL WEB APP GAS ASLI ANDA (TETAP TERJAGA)
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbyNHyeDE5ZiJU470IAkSBaOwFK29MUGTzysqFuYrhJqFS4H_HquY7u1kf82v0Jo-3u-0Q/exec";
+    
+    let isCancelled = false;
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function stopProcess() {
+      isCancelled = true;
+      const btnStop = document.getElementById('btnStop');
+      if (btnStop) {
+        btnStop.innerText = "Stopping...";
+        btnStop.disabled = true;
+        btnStop.classList.add('opacity-70', 'cursor-not-allowed');
+      }
+    }
+
+    async function handleProcess() {
+      isCancelled = false;
+      const fileInput = document.getElementById('pdfFiles');
+      const journalTextEl = document.getElementById('journalText');
+      let manualText = journalTextEl ? journalTextEl.value : "";
+      const apiKey = document.getElementById('apiKey').value;
+      const sheetUrl = document.getElementById('sheetUrl').value;
+      
+      const btnSubmit = document.getElementById('btnSubmit');
+      const btnStop = document.getElementById('btnStop');
+
+      if (!apiKey || !sheetUrl) {
+        showStatus("API Key and Google Sheets URL are required!", "error");
+        return;
+      }
+
+      // KONDISI A: MULTIPLE UPLOAD PDF
+      if (fileInput && fileInput.files.length > 0) {
+        const totalFiles = fileInput.files.length;
+        
+        btnSubmit.disabled = true;
+        btnSubmit.classList.add('opacity-90');
+        
+        if (btnStop) {
+          btnStop.classList.remove('hidden');
+          btnStop.classList.add('flex');
+          btnStop.innerText = "Stop";
+          btnStop.disabled = false;
+          btnStop.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+
+        showStatus(`Starting build for ${totalFiles} journals...`, "success");
+
+        for (let i = 0; i < totalFiles; i++) {
+          if (isCancelled) break;
+
+          const currentFile = fileInput.files[i];
+          btnSubmit.innerText = `[${i+1}/${totalFiles}] Extracting Text...`;
+          
+          let extractedText = "";
+          try {
+            extractedText = await extractTextFromPdf(currentFile);
+          } catch (err) {
+            console.error(err);
+            continue;
+          }
+          
+          if (isCancelled) break;
+          
+          btnSubmit.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
+          try {
+            await fetch(CONFIG_GAS_URL, {
+              method: "POST",
+              mode: "no-cors", 
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ journalText: extractedText, apiKey, sheetUrl })
+            });
+          } catch (err) {
+            console.error(err);
+          }
+
+          if (i < totalFiles - 1) {
+            let countdown = 12;
+            while (countdown > 0) {
+              if (isCancelled) break;
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
+              await sleep(1000);
+              countdown--;
+            }
+          }
+        }
+
+        if (btnStop) {
+          btnStop.classList.add('hidden');
+          btnStop.classList.remove('flex');
+        }
+        btnSubmit.disabled = false;
+        btnSubmit.classList.remove('opacity-90');
+        btnSubmit.innerText = "Extract & Add to Matrix";
+        
+        if (isCancelled) {
+          showStatus("Process stopped by user. Some data may have been added.", "error");
+        } else {
+          showStatus(`Successfully processed all ${totalFiles} journals! Check your Google Sheet.`, "success");
+        }
+        
+        fileInput.value = "";
+        return;
+      }
+
+      // KONDISI B: PASTE MANUAL
+      if (manualText && manualText.trim() !== "") {
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = "Processing via AI...";
+        try {
+          await fetch(CONFIG_GAS_URL, {
+            method: "POST",
+            mode: "no-cors", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ journalText: manualText, apiKey, sheetUrl })
+          });
+          btnSubmit.disabled = false;
+          btnSubmit.innerText = "Extract & Add to Matrix";
+          showStatus("Success! Manual abstract added to Sheet.", "success");
+          if (journalTextEl) journalTextEl.value = "";
+        } catch (err) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerText = "Extract & Add to Matrix";
+          showStatus("Failed to send text: " + err, "error");
+        }
+        return;
+      }
+
+      showStatus("Please upload at least one PDF or paste journal text!", "error");
+    }
+
+    function extractTextFromPdf(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const typedarray = new Uint8Array(this.result);
+          pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+            let fullText = "";
+            const pagesToRead = Math.min(pdf.numPages, 2);
+            let count = 0;
+            
+            for (let i = 1; i <= pagesToRead; i++) {
+              pdf.getPage(i).then(function(page) {
+                page.getTextContent().then(function(textContent) {
+                  const pageText = textContent.items.map(item => item.str).join(" ");
+                  fullText += pageText + "\n";
+                  count++;
+                  if (count === pagesToRead) {
+                    resolve(fullText);
+                  }
+                });
+              });
+            }
+          }).catch(reject);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function showStatus(msg, type) {
+      const statusBox = document.getElementById('statusBox');
+      if (statusBox) {
+        statusBox.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
+        statusBox.innerText = msg;
+        statusBox.classList.add(type === "success" ? 'bg-green-50' : 'bg-red-50', type === "success" ? 'text-green-700' : 'text-red-700');
+      }
+    }
+  </script>
+</body>
+</html>
