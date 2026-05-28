@@ -18,7 +18,7 @@
     
     <div class="mb-6 text-center">
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Literature Review Matrix Generator</h1>
-      <p class="text-sm text-slate-500 mt-1">Upload journal PDF or paste abstract directly into your Google Sheets.</p>
+      <p class="text-sm text-slate-500 mt-1">Upload multiple journal PDFs or paste abstract directly into your Google Sheets.</p>
       <div class="mt-2 text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg inline-block border border-amber-100">
         ⚠️ <strong>Important:</strong> Set your Google Sheet to <strong>"Anyone with the link can edit"</strong>.
       </div>
@@ -38,15 +38,15 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDF (Fastest)</label>
-        <input type="file" id="pdfFile" accept="application/pdf" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDFs (You can select multiple files)</label>
+        <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
       </div>
 
       <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
 
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 2: Paste Journal Abstract / Text</label>
-        <textarea id="journalText" rows="5" placeholder="Or paste the text here manually if you don't want to upload a file..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 2: Paste Single Journal Abstract / Text</label>
+        <textarea id="journalText" rows="4" placeholder="Or paste text here manually if you only have one abstract..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
       </div>
 
       <button onclick="handleProcess()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
@@ -58,16 +58,14 @@
   </div>
 
   <script>
-    // Konfigurasi library PDF.js
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
     // KUNCI URL GAS ANDA DI SINI
     const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbyNHyeDE5ZiJU470IAkSBaOwFK29MUGTzysqFuYrhJqFS4H_HquY7u1kf82v0Jo-3u-0Q/exec";
 
-    // Fungsi utama saat tombol diklik
     async function handleProcess() {
-      const fileInput = document.getElementById('pdfFile');
-      let journalText = document.getElementById('journalText').value;
+      const fileInput = document.getElementById('pdfFiles');
+      let manualText = document.getElementById('journalText').value;
       const apiKey = document.getElementById('apiKey').value;
       const sheetUrl = document.getElementById('sheetUrl').value;
       const btn = document.getElementById('btnSubmit');
@@ -77,76 +75,96 @@
         return;
       }
 
-      // Jika user memilih file PDF, kita ekstrak dulu teksnya
+      // KONDISI A: JIKA USER UPLOAD BANYAK FILE PDF
       if (fileInput.files.length > 0) {
+        const totalFiles = fileInput.files.length;
         btn.disabled = true;
-        btn.innerText = "Extracting text from PDF...";
-        try {
-          journalText = await extractTextFromPdf(fileInput.files[0]);
-        } catch (err) {
-          btn.disabled = false;
-          btn.innerText = "Extract & Add to Matrix";
-          showStatus("Failed to read PDF file: " + err, "error");
-          return;
-        }
-      }
+        showStatus(`Starting build for ${totalFiles} journals...`, "success");
 
-      if (!journalText || journalText.trim() === "") {
-        showStatus("Please upload a PDF or paste some text first!", "error");
+        // Lakukan perulangan untuk memproses satu per satu file (Antrean sekuensial agar aman dari rate limit Groq)
+        for (let i = 0; i < totalFiles; i++) {
+          const currentFile = fileInput.files[i];
+          btn.innerText = `[${i+1}/${totalFiles}] Extracting Text...`;
+          
+          try {
+            const extractedText = await extractTextFromPdf(currentFile);
+            
+            btn.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
+            
+            // Tembak ke Backend GAS Anda
+            await fetch(CONFIG_GAS_URL, {
+              method: "POST",
+              mode: "no-cors", 
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ journalText: extractedText, apiKey, sheetUrl })
+            });
+
+          } catch (err) {
+            console.error(err);
+            showStatus(`Error processing file ${currentFile.name}: ${err.toString()}`, "error");
+            // Tetap lanjutkan ke file berikutnya meskipun ada 1 file yang gagal
+          }
+        }
+
+        // Selesai memproses semua file dalam antrean
         btn.disabled = false;
         btn.innerText = "Extract & Add to Matrix";
+        showStatus(`Successfully processed all ${totalFiles} journals! Check your Google Sheet.`, "success");
+        fileInput.value = "";
         return;
       }
 
-      // Kirim ke GAS Backend
-      btn.disabled = true;
-      btn.innerText = "Processing via AI...";
-      
-      try {
-        await fetch(CONFIG_GAS_URL, {
-          method: "POST",
-          mode: "no-cors", 
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ journalText, apiKey, sheetUrl })
-        });
-
-        btn.disabled = false;
-        btn.innerText = "Extract & Add to Matrix";
-        showStatus("Success! Please check your Google Sheet in a few seconds.", "success");
-        // Reset input
-        document.getElementById('journalText').value = "";
-        fileInput.value = "";
-
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerText = "Extract & Add to Matrix";
-        showStatus("Failed to communicate with GAS backend: " + err, "error");
+      // KONDISI B: JIKA USER PAKAI PASTE MANUAL (HANYA 1 JURNAL)
+      if (manualText && manualText.trim() !== "") {
+        btn.disabled = true;
+        btn.innerText = "Processing via AI...";
+        try {
+          await fetch(CONFIG_GAS_URL, {
+            method: "POST",
+            mode: "no-cors", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ journalText: manualText, apiKey, sheetUrl })
+          });
+          btn.disabled = false;
+          btn.innerText = "Extract & Add to Matrix";
+          showStatus("Success! Manual abstract added to Sheet.", "success");
+          document.getElementById('journalText').value = "";
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerText = "Extract & Add to Matrix";
+          showStatus("Failed to send text: " + err, "error");
+        }
+        return;
       }
+
+      // Jika dua-duanya kosong
+      showStatus("Please upload at least one PDF or paste journal text!", "error");
     }
 
-    // Fungsi ajaib untuk membaca teks dari file PDF (Hanya mengambil halaman 1 & 2 untuk menghemat kuota token AI)
+    // Fungsi membaca PDF halaman 1 & 2
     function extractTextFromPdf(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = async function() {
-          try {
-            const typedarray = new Uint8Array(this.result);
-            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+        reader.onload = function() {
+          const typedarray = new Uint8Array(this.result);
+          pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
             let fullText = "";
-            
-            // Batasi maksimal membaca 2 halaman pertama saja agar cepat dan hemat token
-            const pagesToRead = Math.min(pdf.numPages, 2); 
+            const pagesToRead = Math.min(pdf.numPages, 2);
+            let count = 0;
             
             for (let i = 1; i <= pagesToRead; i++) {
-              const page = await pdf.getPage(i);
-              const textContent = await page.getTextContent();
-              const pageText = textContent.items.map(item => item.str).join(" ");
-              fullText += pageText + "\n";
+              pdf.getPage(i).then(function(page) {
+                page.getTextContent().then(function(textContent) {
+                  const pageText = textContent.items.map(item => item.str).join(" ");
+                  fullText += pageText + "\n";
+                  count++;
+                  if (count === pagesToRead) {
+                    resolve(fullText);
+                  }
+                });
+              });
             }
-            resolve(fullText);
-          } catch (e) {
-            reject(e);
-          }
+          }).catch(reject);
         };
         reader.readAsArrayBuffer(file);
       });
