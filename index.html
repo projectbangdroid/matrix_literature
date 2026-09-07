@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Literature Review Matrix Generator | Extract Abstract to Sheets</title>
-  <meta name="description" content="Extract journal abstracts, methodology, findings, and research gaps directly into Google Sheets.">
+  <title>Free Literature Review Matrix Generator | Extract Abstract to Excel/CSV</title>
+  <meta name="description" content="Extract journal abstracts, methodology, findings, and research gaps directly into a downloadable CSV file.">
   
   <!-- Microsoft Clarity Analytics -->
   <script type="text/javascript">
@@ -29,26 +29,21 @@
     
     <div class="mb-6 text-center">
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Literature Review Matrix Generator</h1>
-      <p class="text-sm text-slate-500 mt-1">Upload multiple journal PDFs or paste abstract directly into your Google Sheets.</p>
-      <div class="mt-2 text-xs bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg inline-block border border-amber-100">
-        ⚠️ <strong>Important:</strong> Set your Google Sheet to <strong>"Anyone with the link can edit"</strong>.
+      <p class="text-sm text-slate-500 mt-1">Upload journal PDFs and instantly download the extracted matrix as a CSV file (Excel-ready).</p>
+      <div class="mt-2 text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg inline-block border border-indigo-100">
+        ✨ <strong>New:</strong> No Google Sheets required! Your data downloads automatically.
       </div>
     </div>
 
     <div class="space-y-4">
       
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Groq API Key</label>
-          <input type="password" id="apiKey" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Google Sheets URL</label>
-          <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
-        </div>
+      <!-- Input API Key Saja (Sheet URL dihapus) -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Groq API Key</label>
+        <input type="password" id="apiKey" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
       </div>
 
-      <!-- FITUR BARU: Pilihan Bahasa Output -->
+      <!-- Pilihan Bahasa Output -->
       <div>
         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Output Language (Hasil Ekstraksi)</label>
         <select id="targetLanguage" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition bg-white">
@@ -71,7 +66,7 @@
 
       <div class="flex gap-3">
         <button type="button" onclick="handleProcess()" id="btnSubmit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
-          <span>Extract & Add to Matrix</span>
+          <span>Extract & Download CSV</span>
         </button>
         <button type="button" onclick="stopProcess()" id="btnStop" class="hidden bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition justify-center items-center shadow-sm">
           <span>Stop</span>
@@ -82,33 +77,28 @@
     </div>
   </div>
 
+  <!-- FAQ Section disesuaikan -->
   <div class="w-full max-w-2xl mt-12 pt-6 border-t border-slate-200 text-slate-600 text-sm space-y-6">
     <h2 class="text-xl font-bold text-slate-900 tracking-tight">Systematic Literature Review Made Easy</h2>
     <p class="text-slate-500 leading-relaxed">
-      Writing a thesis, dissertation, or research paper requires a comprehensive analysis of existing academic journals. Manually extracting metadata to build a research framework can take hours. This <strong>Free AI Literature Review Matrix Generator</strong> automates the process, allowing you to synthesize multiple study materials instantly into a well-structured database.
+      This <strong>Free AI Literature Review Matrix Generator</strong> automates the process of extracting metadata from existing academic journals.
     </p>
     <div class="space-y-5">
       <div>
-        <h3 class="font-bold text-slate-800 text-base">What is a Literature Review Matrix?</h3>
-        <p class="mt-1 text-slate-500 leading-relaxed">
-          A literature review matrix (or synthesis matrix) is an essential academic tool used to evaluate, compare, and organize research articles. By categorizing key variables such as the author, publication year, methodology, findings, and research gaps side-by-side, researchers can easily identify patterns, contradictions, and areas for future study.
-        </p>
-      </div>
-      <div>
         <h3 class="font-bold text-slate-800 text-base">How does this AI Abstract Extractor work?</h3>
         <p class="mt-1 text-slate-500 leading-relaxed">
-          This tool uses a decentralized modern web architecture (Headless GAS). When you upload a journal PDF, the open-source <code>PDF.js</code> library extracts the text locally within your browser. Then, advanced language models via the Groq API analyze the metadata and automatically append the structured row into your specified Google Sheet database.
+          This tool is 100% serverless. When you upload a journal PDF, the <code>PDF.js</code> library extracts the text locally within your browser. The Groq API analyzes the metadata, and the final structured matrix is immediately downloaded to your computer as a CSV file.
         </p>
       </div>
       <div>
-        <h3 class="font-bold text-slate-800 text-base">How to get a Free Groq API Key?</h3>
+        <h3 class="font-bold text-slate-800 text-base">How to open the downloaded file?</h3>
         <p class="mt-1 text-slate-500 leading-relaxed">
-          To provide this tool completely free without subscriptions, we adopt the <strong>BYOK (Bring Your Own Key)</strong> model. You can generate a free API token in less than a minute by visiting the official Groq Console.
+          The tool generates a standard <code>.csv</code> file. You can double-click it to open it directly in Microsoft Excel, Apple Numbers, or import it into Google Sheets.
         </p>
       </div>
     </div>
     <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
-      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel & Google Apps Script.</p>
+      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel.</p>
     </div>
   </div>
 
@@ -119,8 +109,6 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbyNHyeDE5ZiJU470IAkSBaOwFK29MUGTzysqFuYrhJqFS4H_HquY7u1kf82v0Jo-3u-0Q/exec";
-    
     let isCancelled = false;
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -134,23 +122,97 @@
       }
     }
 
+    // Fungsi pembersih format
+    function cleanOutput(val, fallbackText) {
+      if (!val || val === "") return fallbackText;
+      if (Array.isArray(val)) return val.join(", ");
+      if (typeof val === 'object') return JSON.stringify(val);
+      return String(val).trim();
+    }
+
+    // Fungsi untuk membuat dan mengunduh file CSV
+    function downloadCSV(dataArray) {
+      const headers = ["Title", "Author", "Year", "Methodology", "Findings", "Research Gap"];
+      // Tambahkan BOM agar Excel mengenali karakter Unicode (UTF-8) dengan benar
+      let csvContent = "\uFEFF" + headers.join(",") + "\n";
+      
+      dataArray.forEach(row => {
+        let rowArray = [row.title, row.author, row.year, row.method, row.findings, row.gap];
+        // Format CSV yang aman (tanda kutip ganda untuk teks yang mengandung koma atau enter)
+        let csvRow = rowArray.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",");
+        csvContent += csvRow + "\n";
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Literature_Matrix_Result.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Fungsi menembak Groq API langsung dari Browser
+    async function fetchFromGroq(text, apiKey, targetLanguage) {
+      const apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+      const systemPrompt = "You are an expert academic research assistant. Extract metadata from the journal abstract or text provided. " +
+                           "You MUST respond ONLY with a raw JSON object with these exact keys: 'title', 'author', 'year', 'method', 'findings', 'gap'. " +
+                           "Do not wrap the response in markdown code blocks. " +
+                           "CRITICAL INSTRUCTION: Regardless of the original language of the provided text, you MUST translate and write your answers for 'method', 'findings', and 'gap' STRICTLY in " + targetLanguage + ". Keep 'title', 'author', and 'year' in their original context.";
+
+      const payload = {
+        model: "llama-3.1-8b-instant",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: text }
+        ],
+        response_format: { type: "json_object" }, 
+        temperature: 0.2
+      };
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error.message || "Unknown API Error");
+      }
+
+      const jsonResponse = await response.json();
+      let aiContent = jsonResponse.choices[0].message.content;
+      
+      // Bersihkan markdown backticks jika AI bandel
+      aiContent = aiContent.replace(/```json/g, "").replace(/```/g, "").trim();
+      return JSON.parse(aiContent);
+    }
+
     async function handleProcess() {
       isCancelled = false;
       const fileInput = document.getElementById('pdfFiles');
       const journalTextEl = document.getElementById('journalText');
       let manualText = journalTextEl ? journalTextEl.value : "";
       const apiKey = document.getElementById('apiKey').value;
-      const sheetUrl = document.getElementById('sheetUrl').value;
-      const targetLanguage = document.getElementById('targetLanguage').value; // Ambil nilai bahasa
+      const targetLanguage = document.getElementById('targetLanguage').value;
       
       const btnSubmit = document.getElementById('btnSubmit');
       const btnStop = document.getElementById('btnStop');
+      
+      let collectedData = [];
+      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
 
-      if (!apiKey || !sheetUrl) {
-        showStatus("API Key and Google Sheets URL are required!", "error");
+      if (!apiKey) {
+        showStatus("Groq API Key is required!", "error");
         return;
       }
 
+      // KONDISI A: MULTIPLE UPLOAD PDF
       if (fileInput && fileInput.files.length > 0) {
         const totalFiles = fileInput.files.length;
         
@@ -165,7 +227,7 @@
           btnStop.classList.remove('opacity-70', 'cursor-not-allowed');
         }
 
-        showStatus(`Starting build for ${totalFiles} journals...`, "success");
+        showStatus(`Processing ${totalFiles} journals...`, "success");
 
         for (let i = 0; i < totalFiles; i++) {
           if (isCancelled) break;
@@ -176,8 +238,10 @@
           let extractedText = "";
           try {
             extractedText = await extractTextFromPdf(currentFile);
+            // Bersihkan karakter siluman
+            extractedText = extractedText.replace(/[^\x20-\x7E\r\n]/g, " ");
           } catch (err) {
-            console.error(err);
+            console.error("PDF Extraction failed for file", i, err);
             continue;
           }
           
@@ -185,18 +249,28 @@
           
           btnSubmit.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
           try {
-            await fetch(CONFIG_GAS_URL, {
-              method: "POST",
-              mode: "no-cors", 
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ journalText: extractedText, apiKey, sheetUrl, targetLanguage }) // Kirim targetLanguage ke GAS
+            const aiResult = await fetchFromGroq(extractedText, apiKey, targetLanguage);
+            collectedData.push({
+              title: cleanOutput(aiResult.title, fallbackText),
+              author: cleanOutput(aiResult.author, fallbackText),
+              year: cleanOutput(aiResult.year, fallbackText),
+              method: cleanOutput(aiResult.method, fallbackText),
+              findings: cleanOutput(aiResult.findings, fallbackText),
+              gap: cleanOutput(aiResult.gap, fallbackText)
             });
           } catch (err) {
             console.error(err);
+            // Tangani Rate Limit dengan sederhana
+            if (err.message.includes("Rate limit")) {
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Rate Limit! Waiting 15s...`;
+              await sleep(15000);
+              i--; // Ulangi file ini
+              continue;
+            }
           }
 
           if (i < totalFiles - 1) {
-            let countdown = 12;
+            let countdown = 10; // Jeda 10 detik antar panggilan
             while (countdown > 0) {
               if (isCancelled) break;
               btnSubmit.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
@@ -212,36 +286,42 @@
         }
         btnSubmit.disabled = false;
         btnSubmit.classList.remove('opacity-90');
-        btnSubmit.innerText = "Extract & Add to Matrix";
+        btnSubmit.innerText = "Extract & Download CSV";
         
-        if (isCancelled) {
-          showStatus("Process stopped by user. Some data may have been added.", "error");
+        if (collectedData.length > 0) {
+          downloadCSV(collectedData);
+          showStatus(isCancelled ? "Process stopped. Downloaded partial data." : `Success! Downloaded ${collectedData.length} entries.`, "success");
         } else {
-          showStatus(`Successfully processed all ${totalFiles} journals! Check your Google Sheet.`, "success");
+          showStatus("Failed to extract any data.", "error");
         }
         
         fileInput.value = "";
         return;
       }
 
+      // KONDISI B: PASTE MANUAL
       if (manualText && manualText.trim() !== "") {
         btnSubmit.disabled = true;
         btnSubmit.innerText = "Processing via AI...";
         try {
-          await fetch(CONFIG_GAS_URL, {
-            method: "POST",
-            mode: "no-cors", 
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ journalText: manualText, apiKey, sheetUrl, targetLanguage }) // Kirim targetLanguage ke GAS
+          const aiResult = await fetchFromGroq(manualText, apiKey, targetLanguage);
+          collectedData.push({
+              title: cleanOutput(aiResult.title, fallbackText),
+              author: cleanOutput(aiResult.author, fallbackText),
+              year: cleanOutput(aiResult.year, fallbackText),
+              method: cleanOutput(aiResult.method, fallbackText),
+              findings: cleanOutput(aiResult.findings, fallbackText),
+              gap: cleanOutput(aiResult.gap, fallbackText)
           });
+          downloadCSV(collectedData);
           btnSubmit.disabled = false;
-          btnSubmit.innerText = "Extract & Add to Matrix";
-          showStatus("Success! Manual abstract added to Sheet.", "success");
+          btnSubmit.innerText = "Extract & Download CSV";
+          showStatus("Success! File downloaded.", "success");
           if (journalTextEl) journalTextEl.value = "";
         } catch (err) {
           btnSubmit.disabled = false;
-          btnSubmit.innerText = "Extract & Add to Matrix";
-          showStatus("Failed to send text: " + err, "error");
+          btnSubmit.innerText = "Extract & Download CSV";
+          showStatus("Error: " + err.message, "error");
         }
         return;
       }
