@@ -142,7 +142,7 @@
       <section id="view-search" class="hidden space-y-6">
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
           <h3 class="font-bold text-slate-900 text-lg">Direct Academic Paper Search</h3>
-          <p class="text-sm text-slate-500">Search millions of research papers instantly via server-proxied academic database and add them directly to your workspace memory.</p>
+          <p class="text-sm text-slate-500">Search millions of research papers instantly via crossref academic database and add them directly to your workspace memory.</p>
           
           <div class="flex gap-3">
             <input type="text" id="searchQuery" placeholder="Enter research keywords (e.g., machine learning in education)..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50" onkeypress="if(event.key === 'Enter') handleSearchPapers()">
@@ -400,13 +400,13 @@
       return result.data;
     }
 
-    // Direct Paper Search via GAS Proxy (Bypasses Browser CORS)
+    // Fixed Direct Paper Search matching Crossref data structure
     async function handleSearchPapers() {
       const query = document.getElementById('searchQuery').value.trim();
       const resultsContainer = document.getElementById('searchResultsContainer');
       if (!query) { alert('Please enter search keywords.'); return; }
 
-      resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Searching Semantic Scholar database...</p>';
+      resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Searching Crossref database...</p>';
       try {
         const resultData = await callGasProxy({
           action: "search",
@@ -420,7 +420,7 @@
 
         let html = '';
         resultData.data.forEach((p) => {
-          const authors = p.authors ? p.authors.map(a => a.name).join(', ') : 'Unknown Author';
+          const authors = p.authors || 'Unknown Author';
           const year = p.year || 'n.d.';
           const abstract = p.abstract || 'No abstract available.';
           const title = p.title || 'Untitled';
@@ -436,7 +436,7 @@
         });
         resultsContainer.innerHTML = html;
       } catch (err) {
-        resultsContainer.innerHTML = `<p class="text-sm text-red-500 text-center py-6">Error searching papers: ${err.message}</p>`;
+        resultsContainer.innerHTML = `<p class="text-sm text-red-500 text-center py-6">Error searching papers: ${escapeHtml(err.message)}</p>`;
       }
     }
 
@@ -445,7 +445,7 @@
         title: title,
         author: authors,
         year: String(year),
-        method: 'Semantic Scholar API (Abstract-based)',
+        method: 'Crossref API (Metadata-based)',
         findings: abstract.substring(0, 300) + '...',
         gap: 'Retrieved via direct search'
       });
