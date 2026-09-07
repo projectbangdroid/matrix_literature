@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p class="text-xs text-slate-400">AI Research Suite v2.2</p>
+          <p class="text-xs text-slate-400">AI Research Suite v2.3</p>
         </div>
       </div>
 
@@ -160,6 +160,18 @@
           <h3 class="font-bold text-slate-900 text-lg">Research Gap & Novelty Strategy Finder</h3>
           <p class="text-sm text-slate-500">Analyze overarching literature gaps from your workspace papers and discover high-impact research topics and recommended titles.</p>
           
+          <!-- Pilihan Preferred Methodology Focus -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Preferred Methodology Focus</label>
+            <select id="methodologyFilter" class="w-full sm:w-72 px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs">
+              <option value="Any / Mixed Method">Any / Mixed Method (Default)</option>
+              <option value="Quantitative Empirical">Quantitative Empirical</option>
+              <option value="Qualitative Case Study">Qualitative Case Study</option>
+              <option value="Systematic Literature Review (SLR)">Systematic Literature Review (SLR)</option>
+              <option value="Experimental / Development">Experimental / Development</option>
+            </select>
+          </div>
+
           <button type="button" onclick="handleGapFinder()" id="btnGap" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
             💡 Analyze Gaps & Recommend Titles
           </button>
@@ -174,10 +186,10 @@
             <h4 class="font-bold text-slate-900 text-base">Strategic Novelty Recommendations</h4>
             <div id="gapRecsContent" class="text-sm text-slate-700 leading-relaxed bg-indigo-50/40 p-5 rounded-xl border border-indigo-100 whitespace-pre-line"></div>
           </div>
-          <!-- FITUR BARU: AI Research Title Recommendations -->
+          <!-- FITUR: Title & Novelty Recommendations -->
           <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-3">
             <div class="flex justify-between items-center">
-              <h4 class="font-bold text-slate-900 text-base">🎯 AI Research Title & Novelty Recommendations</h4>
+              <h4 class="font-bold text-slate-900 text-base">🎯 Title & Novelty Recommendations</h4>
               <button onclick="copyTitles()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition cursor-pointer">
                 📋 Copy Titles
               </button>
@@ -234,7 +246,7 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbwwPKtO2shJerXZnG8WoqLSSD6wZPJ6G2JJJsG0GQc__6BGLZrKGW3lnUDNccZHxF1xRQ/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbxefPkTWc6ehtcjhut9d0mCqXn3i0dVRSQtT8T7zJAqLN94j4pch2QLvQr4dmmaG2jowQ/exec";
     
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -485,6 +497,7 @@
     async function handleGapFinder() {
       const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
+      const methodologyFilter = document.getElementById('methodologyFilter').value;
       const btn = document.getElementById('btnGap');
 
       if (!apiKey) { showStatus("⚠️ Please enter your Groq API Key.", "error"); return; }
@@ -499,6 +512,7 @@
           action: "gap",
           apiKey: apiKey,
           targetLanguage: targetLanguage,
+          methodologyFilter: methodologyFilter,
           papersJson: JSON.stringify(window.appCollectedData)
         });
         document.getElementById('gapOverviewContent').innerText = res.gapOverview || "No overview available.";
@@ -517,7 +531,7 @@
     function copyTitles() {
       const text = document.getElementById('gapTitlesContent').innerText;
       navigator.clipboard.writeText(text);
-      alert("Research titles copied to clipboard!");
+      alert("Titles copied to clipboard!");
     }
 
     function formatAuthors(authorStr, style) {
