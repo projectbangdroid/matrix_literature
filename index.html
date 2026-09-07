@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academic AI Workspace | Literature Review & Synthesis Suite</title>
-  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, research gap analysis, title recommendations, chat with papers, and automatic bibliography.">
+  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, research gap analysis, and automatic bibliography.">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -14,139 +14,169 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col md:flex-row">
+<body class="bg-slate-900 font-sans text-slate-800 min-h-screen flex flex-col justify-center items-center">
 
-  <!-- SIDEBAR NAVIGATION -->
-  <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
-    <div>
-      <div class="flex items-center gap-3 mb-8 px-2">
-        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
+  <!-- ==================== ELEGAN LOGIN SCREEN ==================== -->
+  <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
+    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-8 sm:p-10 space-y-7 relative overflow-hidden">
+      <!-- Decorative Glow -->
+      <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+
+      <div class="text-center space-y-3">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg mx-auto">🎓</div>
         <div>
-          <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p class="text-xs text-slate-400">AI Research Suite v2.5 (Locked)</p>
+          <h1 class="font-extrabold text-slate-900 text-2xl tracking-tight">Academic Workspace</h1>
+          <p class="text-xs text-slate-500 mt-1">Sign in with your authorized email & API key to enter.</p>
         </div>
       </div>
 
-      <nav class="space-y-1.5">
-        <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm cursor-pointer">
-          <span class="flex items-center gap-3"><span class="text-base">📁</span> Matrix Generator</span>
-        </button>
-        <button onclick="switchTab('search')" id="nav-search" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
-          <span class="flex items-center gap-3"><span class="text-base">🔍</span> Direct Paper Search</span>
-          <span class="text-xs">🔒</span>
-        </button>
-        <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
-          <span class="flex items-center gap-3"><span class="text-base">✍️</span> Auto-Synthesis (Bab 2)</span>
-          <span class="text-xs">🔒</span>
-        </button>
-        <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
-          <span class="flex items-center gap-3"><span class="text-base">💡</span> Gap & Novelty Finder</span>
-          <span class="text-xs">🔒</span>
-        </button>
-        <button onclick="switchTab('chat')" id="nav-chat" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
-          <span class="flex items-center gap-3"><span class="text-base">💬</span> Chat with Papers</span>
-          <span class="text-xs">🔒</span>
-        </button>
-        <button onclick="switchTab('references')" id="nav-references" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
-          <span class="flex items-center gap-3"><span class="text-base">📚</span> References & Citations</span>
-          <span class="text-xs">🔒</span>
-        </button>
-      </nav>
-    </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Registered Email</label>
+          <input type="email" id="loginEmail" placeholder="e.g. name@institution.ac.id" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50 transition font-medium">
+        </div>
 
-    <!-- Sidebar Footer / Memory Badge -->
-    <div class="pt-6 border-t border-slate-800 text-sm space-y-3 mt-6">
-      <div class="bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50">
-        <p class="text-slate-400 font-medium">Workspace Memory:</p>
-        <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Papers Stored</p>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Groq API Key</label>
+          <input type="password" id="loginApiKey" placeholder="gsk_..." class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50 transition font-medium">
+        </div>
+
+        <button type="button" onclick="handleLogin()" id="btnLogin" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-6 rounded-xl text-sm transition shadow-md cursor-pointer flex items-center justify-center gap-2">
+          <span>Enter Workspace</span>
+          <span>→</span>
+        </button>
+
+        <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl text-center font-medium"></div>
       </div>
-      <p class="text-xs text-slate-500 text-center">© 2026 Academic Workspace</p>
-    </div>
-  </aside>
 
-  <!-- MAIN WORKSPACE CONTAINER -->
-  <main class="flex-1 flex flex-col min-h-screen">
-    
-    <!-- TOP BAR -->
-    <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10 shadow-xs">
+      <div class="pt-2 border-t border-slate-100 text-center">
+        <p class="text-[11px] text-slate-400">Secure Academic Research Suite • v2.6</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN WORKSPACE (Hidden by default until login) ==================== -->
+  <div id="mainWorkspace" class="hidden w-full min-h-screen flex flex-col md:flex-row bg-slate-50">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
       <div>
-        <h2 id="pageTitle" class="text-xl font-bold text-slate-900">Literature Review Matrix Generator</h2>
-        <p id="pageDesc" class="text-sm text-slate-500">Upload journal PDFs or paste text to extract metadata into a structured Excel matrix.</p>
-      </div>
-      <div class="flex items-center gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-        <div class="relative flex-1 sm:w-64">
-          <input type="password" id="apiKey" placeholder="Groq API Key (gsk_...)" class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 transition font-medium">
-        </div>
-        
-        <div class="flex items-center gap-2.5 bg-slate-50 px-3 py-1.5 border border-slate-200 rounded-xl">
-          <div class="text-left hidden lg:block">
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Output Language</span>
-            <span class="block text-[11px] text-slate-600 font-medium">Bahasa Hasil AI</span>
-          </div>
-          <select id="targetLanguage" class="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer">
-            <option value="Indonesian">🇮🇩 ID (Bahasa)</option>
-            <option value="English">🇬🇧 EN (English)</option>
-          </select>
-        </div>
-      </div>
-    </header>
-
-    <!-- CONTENT SECTIONS (VIEWS) -->
-    <div class="p-6 md:p-8 max-w-5xl w-full mx-auto flex-1 space-y-6">
-
-      <!-- VIEW 1: MATRIX GENERATOR -->
-      <section id="view-matrix" class="space-y-6">
-        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
+        <div class="flex items-center gap-3 mb-8 px-2">
+          <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
-            <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl p-1.5 cursor-pointer bg-slate-50/50">
-          </div>
-
-          <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
-
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 2: Paste Single Journal Abstract / Text</label>
-            <textarea id="journalText" rows="3" placeholder="Paste journal text or abstract here..." class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition resize-none bg-slate-50/50"></textarea>
-          </div>
-
-          <div class="flex gap-3 pt-2">
-            <button type="button" onclick="handleProcessMatrix()" id="btnSubmitMatrix" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
-              Extract & Add to Workspace (.xls)
-            </button>
+            <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
+            <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.6 (Standard)</p>
           </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8">
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="font-bold text-slate-900 text-base">Extracted Papers Table Preview</h3>
-            <button onclick="downloadExcel()" id="btnDownload" class="hidden px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition shadow-sm cursor-pointer">
-              📥 Download Excel (.xls)
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm border-collapse" id="previewTable">
-              <thead>
-                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
-                  <th class="p-3 font-bold">Title</th>
-                  <th class="p-3 font-bold">Author</th>
-                  <th class="p-3 font-bold">Year</th>
-                  <th class="p-3 font-bold">Methodology</th>
-                  <th class="p-3 font-bold">Findings</th>
-                  <th class="p-3 font-bold">Research Gap</th>
-                </tr>
-              </thead>
-              <tbody id="tableBody" class="text-slate-600 divide-y divide-slate-100">
-                <tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm">No papers extracted yet. Upload files or paste text above.</td></tr>
-              </tbody>
-            </table>
+        <nav class="space-y-1.5">
+          <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm cursor-pointer">
+            <span class="flex items-center gap-3"><span class="text-base">📁</span> Matrix Generator</span>
+          </button>
+          <button onclick="switchTab('search')" id="nav-search" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
+            <span class="flex items-center gap-3"><span class="text-base">🔍</span> Direct Paper Search</span>
+            <span class="text-xs lock-icon">🔒</span>
+          </button>
+          <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
+            <span class="flex items-center gap-3"><span class="text-base">✍️</span> Auto-Synthesis (Bab 2)</span>
+            <span class="text-xs lock-icon">🔒</span>
+          </button>
+          <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
+            <span class="flex items-center gap-3"><span class="text-base">💡</span> Gap & Novelty Finder</span>
+            <span class="text-xs lock-icon">🔒</span>
+          </button>
+          <button onclick="switchTab('chat')" id="nav-chat" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
+            <span class="flex items-center gap-3"><span class="text-base">💬</span> Chat with Papers</span>
+            <span class="text-xs lock-icon">🔒</span>
+          </button>
+          <button onclick="switchTab('references')" id="nav-references" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
+            <span class="flex items-center gap-3"><span class="text-base">📚</span> References & Citations</span>
+            <span class="text-xs lock-icon">🔒</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800 text-sm space-y-3 mt-6">
+        <div class="bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50">
+          <p class="text-slate-400 font-medium">Workspace Memory:</p>
+          <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Papers Stored</p>
+        </div>
+        <p class="text-xs text-slate-500 text-center">© 2026 Academic Workspace</p>
+      </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE CONTAINER -->
+    <main class="flex-1 flex flex-col min-h-screen">
+      
+      <!-- TOP BAR -->
+      <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10 shadow-xs">
+        <div>
+          <h2 id="pageTitle" class="text-xl font-bold text-slate-900">Literature Review Matrix Generator</h2>
+          <p id="pageDesc" class="text-sm text-slate-500">Upload journal PDFs or paste text to extract metadata into a structured Excel matrix.</p>
+        </div>
+        <div class="flex items-center gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          <div class="text-xs font-semibold text-slate-600 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200 truncate max-w-[200px]" id="userDisplayEmail"></div>
+          
+          <div class="flex items-center gap-2.5 bg-slate-50 px-3 py-1.5 border border-slate-200 rounded-xl">
+            <select id="targetLanguage" class="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer">
+              <option value="Indonesian">🇮🇩 ID (Bahasa)</option>
+              <option value="English">🇬🇧 EN (English)</option>
+            </select>
           </div>
         </div>
-      </section>
+      </header>
 
-      <!-- Global Status Box -->
-      <div id="statusBox" class="hidden p-4 rounded-xl text-sm font-medium transition text-left border shadow-xs"></div>
-    </div>
-  </main>
+      <!-- CONTENT SECTIONS -->
+      <div class="p-6 md:p-8 max-w-5xl w-full mx-auto flex-1 space-y-6">
+        <section id="view-matrix" class="space-y-6">
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
+              <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl p-1.5 cursor-pointer bg-slate-50/50">
+            </div>
+            <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 2: Paste Single Journal Abstract / Text</label>
+              <textarea id="journalText" rows="3" placeholder="Paste journal text or abstract here..." class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition resize-none bg-slate-50/50"></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+              <button type="button" onclick="handleProcessMatrix()" id="btnSubmitMatrix" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                Extract & Add to Workspace (.xls)
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-5">
+              <h3 class="font-bold text-slate-900 text-base">Extracted Papers Table Preview</h3>
+              <button onclick="downloadExcel()" id="btnDownload" class="hidden px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition shadow-sm cursor-pointer">
+                📥 Download Excel (.xls)
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm border-collapse" id="previewTable">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                    <th class="p-3 font-bold">Title</th>
+                    <th class="p-3 font-bold">Author</th>
+                    <th class="p-3 font-bold">Year</th>
+                    <th class="p-3 font-bold">Methodology</th>
+                    <th class="p-3 font-bold">Findings</th>
+                    <th class="p-3 font-bold">Research Gap</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="text-slate-600 divide-y divide-slate-100">
+                  <tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm">No papers extracted yet. Upload files or paste text above.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <div id="statusBox" class="hidden p-4 rounded-xl text-sm font-medium transition text-left border shadow-xs"></div>
+      </div>
+    </main>
+  </div>
 
   <script>
     try {
@@ -155,33 +185,76 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzDs9_vs52qiqHibqJk7nUH_YOwtKS_PyfgF6n_FPjsnRAZuxg3TUEgIE5FZ_JbMkcSvA/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzVtr4l2FFMYQ_KzL_r0pvejnX6JxwsOMViTc-3jdw7hdzvbF9kgfplkjCKABKT8x__-g/exec";
     
+    let globalEmail = "";
+    let globalApiKey = "";
+    let isUserUnlocked = false;
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-    function switchTab(tab) {
-      if (tab !== 'matrix') {
-        alert("🔒 Fitur ini sedang dikunci sementara. Saat ini hanya Matrix Generator yang aktif.");
+    async function handleLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const apiKey = document.getElementById('loginApiKey').value.trim();
+      const errBox = document.getElementById('loginError');
+      const btn = document.getElementById('btnLogin');
+
+      errBox.classList.add('hidden');
+      if (!email || !email.includes('@')) {
+        errBox.innerText = "Please enter a valid email address.";
+        errBox.classList.remove('hidden');
+        return;
+      }
+      if (!apiKey) {
+        errBox.innerText = "Please enter your Groq API Key.";
+        errBox.classList.remove('hidden');
         return;
       }
 
-      ['matrix', 'search', 'synthesis', 'gap', 'chat', 'references'].forEach(t => {
-        const viewEl = document.getElementById('view-' + t);
-        const navEl = document.getElementById('nav-' + t);
-        if (viewEl) viewEl.classList.add('hidden');
-        if (navEl) navEl.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer";
-      });
+      btn.disabled = true;
+      btn.innerText = "Verifying access...";
 
-      const activeView = document.getElementById('view-' + tab);
-      const activeNav = document.getElementById('nav-' + tab);
-      if (activeView) activeView.classList.remove('hidden');
-      if (activeNav) activeNav.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm cursor-pointer";
+      try {
+        const response = await fetch(CONFIG_GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "verify", userEmail: email })
+        });
+        const result = await response.json();
+        
+        if (result.status === "success") {
+          globalEmail = email;
+          globalApiKey = apiKey;
+          isUserUnlocked = result.data.unlocked;
 
-      document.getElementById('pageTitle').innerText = "Literature Review Matrix Generator";
-      document.getElementById('pageDesc').innerText = "Upload journal PDFs or paste text to extract metadata into a structured Excel matrix.";
-      
-      hideStatus();
+          // Transisi dari Halaman Login ke Workspace
+          document.body.className = "bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col md:flex-row";
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('mainWorkspace').classList.remove('hidden');
+          document.getElementById('userDisplayEmail').innerText = email;
+
+          if (isUserUnlocked) {
+            document.getElementById('appVersionText').innerText = "AI Research Suite v2.6 (Unlocked)";
+            document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
+          } else {
+            document.getElementById('appVersionText').innerText = "AI Research Suite v2.6 (Standard)";
+          }
+        } else {
+          throw new Error(result.message || "Verification failed");
+        }
+      } catch (e) {
+        errBox.innerText = "Error: " + e.message;
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerText = "Enter Workspace →";
+      }
+    }
+
+    function switchTab(tab) {
+      if (tab !== 'matrix' && !isUserUnlocked) {
+        alert("🔒 Access Restricted: Your email is not whitelisted for advanced features. Currently only Matrix Generator is available.");
+        return;
+      }
     }
 
     function updateMemoryBadge() {
@@ -244,6 +317,7 @@
     }
 
     async function callGasProxy(payload) {
+      payload.userEmail = globalEmail;
       const response = await fetch(CONFIG_GAS_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -255,14 +329,13 @@
     }
 
     async function handleProcessMatrix() {
-      const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
       const fileInput = document.getElementById('pdfFiles');
       const textInput = document.getElementById('journalText');
       const btn = document.getElementById('btnSubmitMatrix');
 
-      if (!apiKey) {
-        showStatus("⚠️ Please enter your Groq API Key first.", "error");
+      if (!globalApiKey) {
+        showStatus("⚠️ API Key is missing.", "error");
         return;
       }
 
@@ -299,7 +372,7 @@
             try {
               const res = await callGasProxy({
                 action: "extract",
-                apiKey: apiKey,
+                apiKey: globalApiKey,
                 targetLanguage: targetLanguage,
                 journalText: text
               });
@@ -338,7 +411,7 @@
           btn.innerText = "Analyzing text via AI...";
           const res = await callGasProxy({
             action: "extract",
-            apiKey: apiKey,
+            apiKey: globalApiKey,
             targetLanguage: targetLanguage,
             journalText: manualText
           });
