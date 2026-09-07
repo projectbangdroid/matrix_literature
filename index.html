@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p class="text-xs text-slate-400">AI Research Suite v2.4</p>
+          <p class="text-xs text-slate-400">AI Research Suite v2.5</p>
         </div>
       </div>
 
@@ -138,14 +138,14 @@
         </div>
       </section>
 
-      <!-- VIEW 2: DIRECT PAPER SEARCH (NEW) -->
+      <!-- VIEW 2: DIRECT PAPER SEARCH -->
       <section id="view-search" class="hidden space-y-6">
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
           <h3 class="font-bold text-slate-900 text-lg">Direct Academic Paper Search</h3>
-          <p class="text-sm text-slate-500">Search millions of research papers instantly via academic database and add them directly to your workspace memory.</p>
+          <p class="text-sm text-slate-500">Search millions of research papers instantly via server-proxied academic database and add them directly to your workspace memory.</p>
           
           <div class="flex gap-3">
-            <input type="text" id="searchQuery" placeholder="Enter research keywords (e.g., machine learning in education)..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50">
+            <input type="text" id="searchQuery" placeholder="Enter research keywords (e.g., machine learning in education)..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50" onkeypress="if(event.key === 'Enter') handleSearchPapers()">
             <button type="button" onclick="handleSearchPapers()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm shrink-0">
               🔍 Search
             </button>
@@ -225,7 +225,7 @@
         </div>
       </section>
 
-      <!-- VIEW 5: CHAT WITH PAPERS (NEW) -->
+      <!-- VIEW 5: CHAT WITH PAPERS -->
       <section id="view-chat" class="hidden space-y-6">
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 flex flex-col h-[600px]">
           <div class="mb-4">
@@ -233,14 +233,12 @@
             <p class="text-sm text-slate-500">Ask specific questions about the papers currently stored in your workspace memory.</p>
           </div>
 
-          <!-- Chat Messages Area -->
           <div id="chatMessages" class="flex-1 overflow-y-auto space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200 mb-4">
             <div class="p-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm mr-auto max-w-xl shadow-xs">
               <strong>AI Assistant:</strong> Hello! I have analyzed the papers currently in your workspace memory. Ask me anything about their findings, methodologies, or comparisons!
             </div>
           </div>
 
-          <!-- Chat Input -->
           <div class="flex gap-3">
             <input type="text" id="chatInput" placeholder="Ask a question about your papers (e.g., Which paper uses machine learning?)..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50" onkeypress="if(event.key === 'Enter') handleChatPapers()">
             <button type="button" onclick="handleChatPapers()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm shrink-0">
@@ -297,7 +295,7 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycby49jB_L5Dd-feglcWzDU6OQ8pBJMrZzfbIgqQJ_Y6C5aNinqAjTLlQx-hnj9oQ2FnF/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbyWBOAs0CxkIEAfmJR4nLvrlFS203pj67sJhdE9HA9OfZrSBouLd-fiU-ilsK7MVlAYLg/exec";
     
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -402,7 +400,7 @@
       return result.data;
     }
 
-    // Direct Paper Search via Semantic Scholar API
+    // Direct Paper Search via GAS Proxy (Bypasses Browser CORS)
     async function handleSearchPapers() {
       const query = document.getElementById('searchQuery').value.trim();
       const resultsContainer = document.getElementById('searchResultsContainer');
@@ -410,15 +408,18 @@
 
       resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Searching Semantic Scholar database...</p>';
       try {
-        const res = await fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=5&fields=title,authors,year,abstract,citationCount`);
-        const data = await res.json();
-        if (!data.data || data.data.length === 0) {
+        const resultData = await callGasProxy({
+          action: "search",
+          searchQuery: query
+        });
+
+        if (!resultData.data || resultData.data.length === 0) {
           resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">No papers found. Try different keywords.</p>';
           return;
         }
 
         let html = '';
-        data.data.forEach((p) => {
+        resultData.data.forEach((p) => {
           const authors = p.authors ? p.authors.map(a => a.name).join(', ') : 'Unknown Author';
           const year = p.year || 'n.d.';
           const abstract = p.abstract || 'No abstract available.';
@@ -452,7 +453,6 @@
       alert(`Successfully added "${title}" to workspace memory!`);
     }
 
-    // Chat with Papers (Mini RAG)
     async function handleChatPapers() {
       const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
