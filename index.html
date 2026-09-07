@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.12 (Guest)</p>
+          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.13 (Guest)</p>
         </div>
       </div>
 
@@ -54,7 +54,7 @@
       </nav>
     </div>
 
-    <!-- Sidebar Footer / Auth Widget & Memory Manager Trigger -->
+    <!-- Sidebar Footer / Auth Widget, Memory Manager & Contact Me -->
     <div class="pt-6 border-t border-slate-800 text-sm space-y-3 mt-6">
       <div id="authWidget" class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
         <div class="flex items-center justify-between">
@@ -74,6 +74,18 @@
         </div>
         <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Active Papers</p>
       </div>
+
+      <!-- Contact Me Trigger -->
+      <button onclick="openContactModal()" class="w-full bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50 hover:border-slate-600 text-left transition flex items-center justify-between cursor-pointer group">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">✉️</span>
+          <div>
+            <p class="text-slate-300 font-medium text-xs group-hover:text-white">Contact Me</p>
+            <p class="text-[10px] text-slate-400">Get in touch or collaborate</p>
+          </div>
+        </div>
+        <span class="text-indigo-400 text-xs font-bold group-hover:translate-x-0.5 transition">→</span>
+      </button>
 
       <p class="text-xs text-slate-500 text-center">© 2026 Academic Workspace</p>
     </div>
@@ -340,6 +352,41 @@
     </div>
   </div>
 
+  <!-- CONTACT ME MODAL -->
+  <div id="contactModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-5 relative">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+        <div>
+          <h3 class="font-bold text-slate-900 text-base">📬 Contact & Collaboration</h3>
+          <p class="text-xs text-slate-500">Feel free to reach out for research inquiries or feedback.</p>
+        </div>
+        <button onclick="closeContactModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+      </div>
+      
+      <div class="space-y-3">
+        <!-- Email Card -->
+        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">📧</span>
+            <div>
+              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Email</p>
+              <p id="contactEmailText" class="text-xs font-semibold text-slate-800">bangdroid@gmail.com</p>
+            </div>
+          </div>
+          <button onclick="copyContactEmail()" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition cursor-pointer">
+            📋 Copy
+          </button>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-3 text-center">
+        <button onclick="closeContactModal()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- LOGIN MODAL DIALOG -->
   <div id="loginModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 space-y-4 relative">
@@ -404,6 +451,19 @@
     // --- SEARCH PAGINATION VARIABLES ---
     let currentSearchOffset = 0;
     let currentSearchQuery = "";
+
+    // --- CONTACT ME MODAL FUNCTIONS ---
+    function openContactModal() {
+      document.getElementById('contactModal').classList.remove('hidden');
+    }
+    function closeContactModal() {
+      document.getElementById('contactModal').classList.add('hidden');
+    }
+    function copyContactEmail() {
+      const emailText = document.getElementById('contactEmailText').innerText;
+      navigator.clipboard.writeText(emailText);
+      alert("Email address copied to clipboard!");
+    }
 
     // --- MEMORY MANAGER FUNCTIONS ---
     function openMemoryModal() {
@@ -532,7 +592,7 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.12 (Unlocked)";
+          document.getElementById('appVersionText').innerText = "AI Research Suite v2.13 (Unlocked)";
           document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
           
           document.getElementById('authWidget').innerHTML = `
@@ -558,7 +618,7 @@
     function handleLogout() {
       globalEmail = "";
       isUserUnlocked = false;
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.12 (Guest)";
+      document.getElementById('appVersionText').innerText = "AI Research Suite v2.13 (Guest)";
       document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
       document.getElementById('authWidget').innerHTML = `
         <div class="flex items-center justify-between">
