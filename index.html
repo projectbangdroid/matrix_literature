@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academic AI Workspace | Literature Review & Synthesis Suite</title>
-  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, research gap analysis, and automatic bibliography.">
+  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, research gap analysis, title recommendations, and automatic bibliography.">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -16,14 +16,14 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col md:flex-row">
 
-  <!-- SIDEBAR NAVIGATION (Sticky di layar agar Workspace Memory tidak ikut ke bawah) -->
+  <!-- SIDEBAR NAVIGATION -->
   <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
     <div>
       <div class="flex items-center gap-3 mb-8 px-2">
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p class="text-xs text-slate-400">AI Research Suite v2.1</p>
+          <p class="text-xs text-slate-400">AI Research Suite v2.2</p>
         </div>
       </div>
 
@@ -56,7 +56,7 @@
   <!-- MAIN WORKSPACE CONTAINER -->
   <main class="flex-1 flex flex-col min-h-screen">
     
-    <!-- TOP BAR (Global Settings) -->
+    <!-- TOP BAR -->
     <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10 shadow-xs">
       <div>
         <h2 id="pageTitle" class="text-xl font-bold text-slate-900">Literature Review Matrix Generator</h2>
@@ -67,7 +67,6 @@
           <input type="password" id="apiKey" placeholder="Groq API Key (gsk_...)" class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 transition font-medium">
         </div>
         
-        <!-- Pilihan Bahasa AI dengan Keterangan Jelas -->
         <div class="flex items-center gap-2.5 bg-slate-50 px-3 py-1.5 border border-slate-200 rounded-xl">
           <div class="text-left hidden lg:block">
             <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Output Language</span>
@@ -106,7 +105,6 @@
           </div>
         </div>
 
-        <!-- Table Preview Container -->
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8">
           <div class="flex justify-between items-center mb-5">
             <h3 class="font-bold text-slate-900 text-base">Extracted Papers Table Preview</h3>
@@ -160,10 +158,10 @@
       <section id="view-gap" class="hidden space-y-6">
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
           <h3 class="font-bold text-slate-900 text-lg">Research Gap & Novelty Strategy Finder</h3>
-          <p class="text-sm text-slate-500">Analyze overarching literature gaps from your workspace papers and discover high-impact research topics.</p>
+          <p class="text-sm text-slate-500">Analyze overarching literature gaps from your workspace papers and discover high-impact research topics and recommended titles.</p>
           
           <button type="button" onclick="handleGapFinder()" id="btnGap" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
-            💡 Analyze Gaps & Novelty Ideas
+            💡 Analyze Gaps & Recommend Titles
           </button>
         </div>
 
@@ -173,8 +171,18 @@
             <div id="gapOverviewContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-5 rounded-xl border border-slate-200"></div>
           </div>
           <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-3">
-            <h4 class="font-bold text-slate-900 text-base">Novelty Recommendations & Future Topics</h4>
+            <h4 class="font-bold text-slate-900 text-base">Strategic Novelty Recommendations</h4>
             <div id="gapRecsContent" class="text-sm text-slate-700 leading-relaxed bg-indigo-50/40 p-5 rounded-xl border border-indigo-100 whitespace-pre-line"></div>
+          </div>
+          <!-- FITUR BARU: AI Research Title Recommendations -->
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-3">
+            <div class="flex justify-between items-center">
+              <h4 class="font-bold text-slate-900 text-base">🎯 AI Research Title & Novelty Recommendations</h4>
+              <button onclick="copyTitles()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition cursor-pointer">
+                📋 Copy Titles
+              </button>
+            </div>
+            <div id="gapTitlesContent" class="text-sm text-slate-700 leading-relaxed bg-emerald-50/40 p-5 rounded-xl border border-emerald-100 whitespace-pre-line"></div>
           </div>
         </div>
       </section>
@@ -226,9 +234,8 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzaY4bY0AzaCegA_C4ByiaAJvsa8JqaaazwqqOlSauhZZbrlsZFCbUs9-dPCO1c8sRz-w/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbwwPKtO2shJerXZnG8WoqLSSD6wZPJ6G2JJJsG0GQc__6BGLZrKGW3lnUDNccZHxF1xRQ/exec";
     
-    // Global Memory State for Workspace Papers
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -484,7 +491,7 @@
       if (window.appCollectedData.length === 0) { showStatus("⚠️ Workspace memory is empty! Extract papers in Matrix Generator first.", "error"); return; }
 
       btn.disabled = true;
-      btn.innerText = "Analyzing Gaps & Novelty...";
+      btn.innerText = "Analyzing Gaps & Titles...";
       hideStatus();
 
       try {
@@ -496,17 +503,23 @@
         });
         document.getElementById('gapOverviewContent').innerText = res.gapOverview || "No overview available.";
         document.getElementById('gapRecsContent').innerText = res.recommendations || "No recommendations available.";
+        document.getElementById('gapTitlesContent').innerText = res.researchTitles || "No titles generated.";
         document.getElementById('gapResultBox').classList.remove('hidden');
-        showStatus("🎉 Research gap and novelty analysis completed!", "success");
+        showStatus("🎉 Research gap analysis and title recommendations completed!", "success");
       } catch (err) {
         showStatus(`❌ Error: ${err.message}`, "error");
       } finally {
         btn.disabled = false;
-        btn.innerText = "💡 Analyze Gaps & Novelty Ideas";
+        btn.innerText = "💡 Analyze Gaps & Recommend Titles";
       }
     }
 
-    // HELPER: Format Author Names strictly for APA / IEEE / Harvard Standards
+    function copyTitles() {
+      const text = document.getElementById('gapTitlesContent').innerText;
+      navigator.clipboard.writeText(text);
+      alert("Research titles copied to clipboard!");
+    }
+
     function formatAuthors(authorStr, style) {
       if (!authorStr || authorStr === "Unknown Author") return "Unknown Author";
       
