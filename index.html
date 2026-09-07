@@ -185,7 +185,7 @@
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h3 class="font-bold text-slate-900 text-lg">Automatic Bibliography & Citations</h3>
-              <p class="text-sm text-slate-500 mt-0.5">Generate formatted reference lists instantly from your workspace memory.</p>
+              <p class="text-sm text-slate-500 mt-0.5">Generate formatted reference lists instantly from your workspace memory following formal academic standards.</p>
             </div>
             <div class="flex items-center gap-3">
               <select id="citationStyle" onchange="renderReferences()" class="px-3.5 py-2 border border-slate-200 rounded-xl text-sm font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs">
@@ -506,6 +506,46 @@
       }
     }
 
+    // HELPER: Format Author Names strictly for APA / IEEE / Harvard Standards
+    function formatAuthors(authorStr, style) {
+      if (!authorStr || authorStr === "Unknown Author") return "Unknown Author";
+      
+      // Clean and split multiple authors by comma or 'and'
+      authorStr = authorStr.replace(/\s+and\s+/gi, ', ');
+      let names = authorStr.split(',').map(n => n.trim()).filter(n => n);
+      if (names.length === 0) return authorStr;
+
+      let formatted = names.map(n => {
+        let parts = n.split(/\s+/);
+        if (parts.length === 1) return n;
+        let lastName = parts[parts.length - 1];
+        let initials = parts.slice(0, parts.length - 1).map(p => p.charAt(0).toUpperCase() + '.').join(' ');
+        
+        if (style === 'APA') {
+          return `${lastName}, ${initials}`;
+        } else { // IEEE / Harvard format: Initials Lastname
+          return `${initials} ${lastName}`;
+        }
+      });
+
+      if (style === 'APA') {
+        if (formatted.length === 1) return formatted[0];
+        if (formatted.length === 2) return `${formatted[0]} & ${formatted[1]}`;
+        if (formatted.length <= 20) {
+          return formatted.slice(0, -1).join(', ') + ', & ' + formatted[formatted.length - 1];
+        } else {
+          return formatted.slice(0, 19).join(', ') + ', ... ' + formatted[formatted.length - 1];
+        }
+      } else { // IEEE & Harvard standard et al. rule for multiple authors
+        if (formatted.length === 1) return formatted[0];
+        if (formatted.length === 2) return `${formatted[0]} and ${formatted[1]}`;
+        if (formatted.length > 3) {
+          return `${formatted[0]} et al.`;
+        }
+        return formatted.slice(0, -1).join(', ') + ', and ' + formatted[formatted.length - 1];
+      }
+    }
+
     function renderReferences() {
       const container = document.getElementById('referencesListContent');
       if (window.appCollectedData.length === 0) {
@@ -516,25 +556,28 @@
       const style = document.getElementById('citationStyle').value;
       let html = '';
 
-      // Sort alphabetically by author
-      const sorted = [...window.appCollectedData].sort((a, b) => a.author.localeCompare(b.author));
+      // Sort alphabetically by raw author string
+      const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
 
       sorted.forEach((item, index) => {
         let citation = '';
-        const author = item.author || "Unknown Author";
+        const formattedAuthor = formatAuthors(item.author, style);
         const year = item.year || "n.d.";
         const title = item.title || "Untitled Paper";
 
         if (style === 'APA') {
-          citation = `${author} (${year}). <em>${title}</em>.`;
+          // APA 7th: Author, A. A. (Year). Title of paper.
+          citation = `${formattedAuthor} (${year}). <em>${title}</em>.`;
         } else if (style === 'IEEE') {
-          citation = `[${index + 1}] ${author}, "${title}," ${year}.`;
+          // IEEE: [1] A. A. Author, "Title of paper," Year.
+          citation = `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.`;
         } else if (style === 'Harvard') {
-          citation = `${author} (${year}) <em>${title}</em>.`;
+          // Harvard: Author, A. A. (Year) Title of paper.
+          citation = `${formattedAuthor} (${year}) <em>${title}</em>.`;
         }
 
         html += `<div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div class="flex-1 text-slate-800 text-sm leading-relaxed">${index + 1}. ${citation}</div>
+          <div class="flex-1 text-slate-800 text-sm leading-relaxed">${citation}</div>
           <button onclick="copySingleRef(${index}, '${style}')" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition shrink-0 cursor-pointer">
             📋 Copy
           </button>
@@ -545,16 +588,16 @@
     }
 
     function copySingleRef(index, style) {
-      const sorted = [...window.appCollectedData].sort((a, b) => a.author.localeCompare(b.author));
+      const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
       const item = sorted[index];
-      const author = item.author || "Unknown Author";
+      const formattedAuthor = formatAuthors(item.author, style);
       const year = item.year || "n.d.";
       const title = item.title || "Untitled Paper";
 
       let citation = '';
-      if (style === 'APA') citation = `${author} (${year}). ${title}.`;
-      else if (style === 'IEEE') citation = `[${index + 1}] ${author}, "${title}," ${year}.`;
-      else if (style === 'Harvard') citation = `${author} (${year}) ${title}.`;
+      if (style === 'APA') citation = `${formattedAuthor} (${year}). ${title}.`;
+      else if (style === 'IEEE') citation = `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.`;
+      else if (style === 'Harvard') citation = `${formattedAuthor} (${year}) ${title}.`;
 
       navigator.clipboard.writeText(citation);
       alert("Citation copied to clipboard!");
@@ -563,16 +606,16 @@
     function copyAllReferences() {
       if (window.appCollectedData.length === 0) return;
       const style = document.getElementById('citationStyle').value;
-      const sorted = [...window.appCollectedData].sort((a, b) => a.author.localeCompare(b.author));
+      const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
       
       let allText = '';
       sorted.forEach((item, index) => {
-        const author = item.author || "Unknown Author";
+        const formattedAuthor = formatAuthors(item.author, style);
         const year = item.year || "n.d.";
         const title = item.title || "Untitled Paper";
-        if (style === 'APA') allText += `${author} (${year}). ${title}.\n`;
-        else if (style === 'IEEE') allText += `[${index + 1}] ${author}, "${title}," ${year}.\n`;
-        else if (style === 'Harvard') allText += `${author} (${year}) ${title}.\n`;
+        if (style === 'APA') allText += `${formattedAuthor} (${year}). ${title}.\n`;
+        else if (style === 'IEEE') allText += `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.\n`;
+        else if (style === 'Harvard') allText += `${formattedAuthor} (${year}) ${title}.\n`;
       });
 
       navigator.clipboard.writeText(allText);
@@ -583,7 +626,8 @@
       if (window.appCollectedData.length === 0) return;
       let bib = '';
       window.appCollectedData.forEach((item, index) => {
-        const citeKey = `ref${index + 1}_${(item.author || 'author').split(' ')[0].toLowerCase()}`;
+        const firstAuthorName = (item.author || 'author').split(',')[0].split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+        const citeKey = `${firstAuthorName}${item.year || '2026'}`;
         bib += `@article{${citeKey},\n`;
         bib += `  title={${item.title}},\n`;
         bib += `  author={${item.author}},\n`;
