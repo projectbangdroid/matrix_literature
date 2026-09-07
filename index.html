@@ -37,13 +37,13 @@
 
     <div class="space-y-4">
       
-      <!-- Input API Key Saja (Sheet URL dihapus) -->
+      <!-- HANYA INPUT API KEY -->
       <div>
         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Groq API Key</label>
         <input type="password" id="apiKey" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
       </div>
 
-      <!-- Pilihan Bahasa Output -->
+      <!-- PILIHAN BAHASA -->
       <div>
         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Output Language (Hasil Ekstraksi)</label>
         <select id="targetLanguage" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition bg-white">
@@ -77,7 +77,6 @@
     </div>
   </div>
 
-  <!-- FAQ Section disesuaikan -->
   <div class="w-full max-w-2xl mt-12 pt-6 border-t border-slate-200 text-slate-600 text-sm space-y-6">
     <h2 class="text-xl font-bold text-slate-900 tracking-tight">Systematic Literature Review Made Easy</h2>
     <p class="text-slate-500 leading-relaxed">
@@ -87,7 +86,7 @@
       <div>
         <h3 class="font-bold text-slate-800 text-base">How does this AI Abstract Extractor work?</h3>
         <p class="mt-1 text-slate-500 leading-relaxed">
-          This tool is 100% serverless. When you upload a journal PDF, the <code>PDF.js</code> library extracts the text locally within your browser. The Groq API analyzes the metadata, and the final structured matrix is immediately downloaded to your computer as a CSV file.
+          This tool uses a decentralized modern web architecture. When you upload a journal PDF, the <code>PDF.js</code> library extracts the text locally. A secure proxy then safely connects to the Groq API to analyze the metadata, and the final matrix is downloaded to your computer as a CSV file.
         </p>
       </div>
       <div>
@@ -98,7 +97,7 @@
       </div>
     </div>
     <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
-      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel.</p>
+      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel & GAS.</p>
     </div>
   </div>
 
@@ -108,6 +107,9 @@
     } catch (e) {
       console.error('PDF.js Worker Error:', e);
     }
+
+    // URL APP SCRIPT ANDA SUDAH DISIMPAN DI SINI
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzihrRAY6etHoxYwCIIXvYrU339f9LTeRWtexg-qFNfGnSqPI6V_ub7LywNJQeie9Ki5w/exec";
 
     let isCancelled = false;
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -122,7 +124,6 @@
       }
     }
 
-    // Fungsi pembersih format
     function cleanOutput(val, fallbackText) {
       if (!val || val === "") return fallbackText;
       if (Array.isArray(val)) return val.join(", ");
@@ -130,15 +131,12 @@
       return String(val).trim();
     }
 
-    // Fungsi untuk membuat dan mengunduh file CSV
     function downloadCSV(dataArray) {
       const headers = ["Title", "Author", "Year", "Methodology", "Findings", "Research Gap"];
-      // Tambahkan BOM agar Excel mengenali karakter Unicode (UTF-8) dengan benar
       let csvContent = "\uFEFF" + headers.join(",") + "\n";
       
       dataArray.forEach(row => {
         let rowArray = [row.title, row.author, row.year, row.method, row.findings, row.gap];
-        // Format CSV yang aman (tanda kutip ganda untuk teks yang mengandung koma atau enter)
         let csvRow = rowArray.map(item => `"${String(item).replace(/"/g, '""')}"`).join(",");
         csvContent += csvRow + "\n";
       });
@@ -153,44 +151,25 @@
       document.body.removeChild(link);
     }
 
-    // Fungsi menembak Groq API langsung dari Browser
-    async function fetchFromGroq(text, apiKey, targetLanguage) {
-      const apiUrl = "https://api.groq.com/openai/v1/chat/completions";
-      const systemPrompt = "You are an expert academic research assistant. Extract metadata from the journal abstract or text provided. " +
-                           "You MUST respond ONLY with a raw JSON object with these exact keys: 'title', 'author', 'year', 'method', 'findings', 'gap'. " +
-                           "Do not wrap the response in markdown code blocks. " +
-                           "CRITICAL INSTRUCTION: Regardless of the original language of the provided text, you MUST translate and write your answers for 'method', 'findings', and 'gap' STRICTLY in " + targetLanguage + ". Keep 'title', 'author', and 'year' in their original context.";
-
+    async function fetchViaGASProxy(text, apiKey, targetLanguage) {
       const payload = {
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: text }
-        ],
-        response_format: { type: "json_object" }, 
-        temperature: 0.2
+        journalText: text,
+        apiKey: apiKey,
+        targetLanguage: targetLanguage
       };
 
-      const response = await fetch(apiUrl, {
+      const response = await fetch(CONFIG_GAS_URL, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error.message || "Unknown API Error");
-      }
-
-      const jsonResponse = await response.json();
-      let aiContent = jsonResponse.choices[0].message.content;
+      const result = await response.json();
       
-      // Bersihkan markdown backticks jika AI bandel
-      aiContent = aiContent.replace(/```json/g, "").replace(/```/g, "").trim();
-      return JSON.parse(aiContent);
+      if (result.status === "error") {
+        throw new Error(result.message);
+      }
+      return result.data;
     }
 
     async function handleProcess() {
@@ -212,7 +191,6 @@
         return;
       }
 
-      // KONDISI A: MULTIPLE UPLOAD PDF
       if (fileInput && fileInput.files.length > 0) {
         const totalFiles = fileInput.files.length;
         
@@ -238,7 +216,6 @@
           let extractedText = "";
           try {
             extractedText = await extractTextFromPdf(currentFile);
-            // Bersihkan karakter siluman
             extractedText = extractedText.replace(/[^\x20-\x7E\r\n]/g, " ");
           } catch (err) {
             console.error("PDF Extraction failed for file", i, err);
@@ -249,7 +226,7 @@
           
           btnSubmit.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
           try {
-            const aiResult = await fetchFromGroq(extractedText, apiKey, targetLanguage);
+            const aiResult = await fetchViaGASProxy(extractedText, apiKey, targetLanguage);
             collectedData.push({
               title: cleanOutput(aiResult.title, fallbackText),
               author: cleanOutput(aiResult.author, fallbackText),
@@ -260,17 +237,16 @@
             });
           } catch (err) {
             console.error(err);
-            // Tangani Rate Limit dengan sederhana
             if (err.message.includes("Rate limit")) {
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Rate Limit! Waiting 15s...`;
-              await sleep(15000);
-              i--; // Ulangi file ini
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Rate Limit! Waiting 12s...`;
+              await sleep(12000);
+              i--; 
               continue;
             }
           }
 
           if (i < totalFiles - 1) {
-            let countdown = 10; // Jeda 10 detik antar panggilan
+            let countdown = 10; 
             while (countdown > 0) {
               if (isCancelled) break;
               btnSubmit.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
@@ -292,19 +268,18 @@
           downloadCSV(collectedData);
           showStatus(isCancelled ? "Process stopped. Downloaded partial data." : `Success! Downloaded ${collectedData.length} entries.`, "success");
         } else {
-          showStatus("Failed to extract any data.", "error");
+          showStatus("Failed to extract any data. Check your API Key.", "error");
         }
         
         fileInput.value = "";
         return;
       }
 
-      // KONDISI B: PASTE MANUAL
       if (manualText && manualText.trim() !== "") {
         btnSubmit.disabled = true;
         btnSubmit.innerText = "Processing via AI...";
         try {
-          const aiResult = await fetchFromGroq(manualText, apiKey, targetLanguage);
+          const aiResult = await fetchViaGASProxy(manualText, apiKey, targetLanguage);
           collectedData.push({
               title: cleanOutput(aiResult.title, fallbackText),
               author: cleanOutput(aiResult.author, fallbackText),
