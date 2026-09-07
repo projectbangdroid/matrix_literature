@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.11 (Guest)</p>
+          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.12 (Guest)</p>
         </div>
       </div>
 
@@ -162,8 +162,8 @@
           <p class="text-sm text-slate-500">Search millions of research papers instantly via crossref academic database and add them directly to your workspace memory.</p>
           
           <div class="flex gap-3">
-            <input type="text" id="searchQuery" placeholder="Enter research keywords (e.g., machine learning in education)..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50" onkeypress="if(event.key === 'Enter') handleSearchPapers()">
-            <button type="button" onclick="handleSearchPapers()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm shrink-0">
+            <input type="text" id="searchQuery" placeholder="Enter research keywords (e.g., machine learning in education)..." class="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50" onkeypress="if(event.key === 'Enter') handleSearchPapers(false)">
+            <button type="button" onclick="handleSearchPapers(false)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm shrink-0">
               🔍 Search
             </button>
           </div>
@@ -394,12 +394,16 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbwmfzG1DTf_KmB3z1_xNSCFKmODh_XI-VtRaxUDaIwdQjUSYCuILpqGfjgyFaLwqikHlQ/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbwZBcG3Li1DrLOUn2dcGIpgjeZMzAGdkLrja1zME2vl5y4DYktu8pstoNb09iHX9Ms_Nw/exec";
     
     let globalEmail = "";
     let isUserUnlocked = false;
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // --- SEARCH PAGINATION VARIABLES ---
+    let currentSearchOffset = 0;
+    let currentSearchQuery = "";
 
     // --- MEMORY MANAGER FUNCTIONS ---
     function openMemoryModal() {
@@ -528,7 +532,7 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.11 (Unlocked)";
+          document.getElementById('appVersionText').innerText = "AI Research Suite v2.12 (Unlocked)";
           document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
           
           document.getElementById('authWidget').innerHTML = `
@@ -554,7 +558,7 @@
     function handleLogout() {
       globalEmail = "";
       isUserUnlocked = false;
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.11 (Guest)";
+      document.getElementById('appVersionText').innerText = "AI Research Suite v2.12 (Guest)";
       document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
       document.getElementById('authWidget').innerHTML = `
         <div class="flex items-center justify-between">
@@ -786,29 +790,44 @@
       return result.data;
     }
 
-    async function handleSearchPapers() {
-      const query = document.getElementById('searchQuery').value.trim();
+    async function handleSearchPapers(isLoadMore = false) {
+      const queryInput = document.getElementById('searchQuery').value.trim();
       const resultsContainer = document.getElementById('searchResultsContainer');
-      if (!query) { alert('Please enter search keywords.'); return; }
+      
+      if (!queryInput && !currentSearchQuery) { 
+        alert('Please enter search keywords.'); 
+        return; 
+      }
 
-      resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Searching Crossref database...</p>';
+      if (!isLoadMore) {
+        currentSearchQuery = queryInput;
+        currentSearchOffset = 0;
+        resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Searching Crossref database...</p>';
+      } else {
+        const loadMoreBtn = document.getElementById('loadMoreSearchBtn');
+        if (loadMoreBtn) loadMoreBtn.innerText = "Loading more papers...";
+      }
+
       try {
         const resultData = await callGasProxy({
           action: "search",
-          searchQuery: query
+          searchQuery: currentSearchQuery,
+          offset: currentSearchOffset
         });
 
-        if (!resultData.data || resultData.data.length === 0) {
+        const paperList = resultData.items || [];
+        if (paperList.length === 0 && !isLoadMore) {
           resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">No papers found. Try different keywords.</p>';
           return;
         }
 
-        let html = '';
-        resultData.data.forEach((p) => {
+        let html = isLoadMore ? resultsContainer.innerHTML.replace(/<div id="loadMoreContainer">[\s\S]*?<\/div>/, '') : '';
+        
+        paperList.forEach((p) => {
+          const title = p.title || 'Untitled';
           const authors = p.authors || 'Unknown Author';
           const year = p.year || 'n.d.';
           const abstract = p.abstract || 'No abstract available.';
-          const title = p.title || 'Untitled';
 
           html += `<div class="p-5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2.5">
             <h5 class="font-bold text-slate-900 text-sm">${escapeHtml(title)}</h5>
@@ -819,9 +838,26 @@
             </button>
           </div>`;
         });
+
+        currentSearchOffset = resultData.nextOffset || (currentSearchOffset + 10);
+
+        if (paperList.length > 0) {
+          html += `<div id="loadMoreContainer" class="pt-4 text-center">
+            <button type="button" id="loadMoreSearchBtn" onclick="handleSearchPapers(true)" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">
+              📥 Load More Results (+10)
+            </button>
+          </div>`;
+        }
+
         resultsContainer.innerHTML = html;
       } catch (err) {
-        resultsContainer.innerHTML = `<p class="text-sm text-red-500 text-center py-6">Error searching papers: ${escapeHtml(err.message)}</p>`;
+        if (!isLoadMore) {
+          resultsContainer.innerHTML = `<p class="text-sm text-red-500 text-center py-6">Error searching papers: ${escapeHtml(err.message)}</p>`;
+        } else {
+          alert(`Error loading more papers: ${err.message}`);
+          const loadMoreBtn = document.getElementById('loadMoreSearchBtn');
+          if (loadMoreBtn) loadMoreBtn.innerText = "📥 Load More Results (+10)";
+        }
       }
     }
 
@@ -1186,7 +1222,7 @@
       let bib = '';
       activePapers.forEach((item, index) => {
         const firstAuthorName = (item.author || 'author').split(',')[0].split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-        const citeKey = `${firstAuthorname}${item.year || '2026'}`;
+        const citeKey = `${firstAuthorName}${item.year || '2026'}`;
         bib += `@article{${citeKey},\n`;
         bib += `  title={${item.title}},\n`;
         bib += `  author={${item.author}},\n`;
