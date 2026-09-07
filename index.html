@@ -16,8 +16,8 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col md:flex-row">
 
-  <!-- SIDEBAR NAVIGATION -->
-  <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0">
+  <!-- SIDEBAR NAVIGATION (Sticky di layar agar Workspace Memory tidak ikut ke bawah) -->
+  <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0 md:sticky md:top-0 md:h-screen md:overflow-y-auto">
     <div>
       <div class="flex items-center gap-3 mb-8 px-2">
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
@@ -28,23 +28,23 @@
       </div>
 
       <nav class="space-y-2">
-        <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm">
+        <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm cursor-pointer">
           <span class="text-base">📁</span> Matrix Generator
         </button>
-        <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300">
+        <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300 cursor-pointer">
           <span class="text-base">✍️</span> Auto-Synthesis (Bab 2)
         </button>
-        <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300">
+        <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300 cursor-pointer">
           <span class="text-base">💡</span> Gap & Novelty Finder
         </button>
-        <button onclick="switchTab('references')" id="nav-references" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300">
+        <button onclick="switchTab('references')" id="nav-references" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300 cursor-pointer">
           <span class="text-base">📚</span> References & Citations
         </button>
       </nav>
     </div>
 
     <!-- Sidebar Footer / Memory Badge -->
-    <div class="pt-6 border-t border-slate-800 text-sm space-y-3">
+    <div class="pt-6 border-t border-slate-800 text-sm space-y-3 mt-6">
       <div class="bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50">
         <p class="text-slate-400 font-medium">Workspace Memory:</p>
         <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Papers Stored</p>
@@ -237,13 +237,13 @@
         const viewEl = document.getElementById('view-' + t);
         const navEl = document.getElementById('nav-' + t);
         if (viewEl) viewEl.classList.add('hidden');
-        if (navEl) navEl.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300";
+        if (navEl) navEl.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300 cursor-pointer";
       });
 
       const activeView = document.getElementById('view-' + tab);
       const activeNav = document.getElementById('nav-' + tab);
       if (activeView) activeView.classList.remove('hidden');
-      if (activeNav) activeNav.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm";
+      if (activeNav) activeNav.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm cursor-pointer";
 
       const titles = {
         matrix: ["Literature Review Matrix Generator", "Upload journal PDFs or paste text to extract metadata into a structured Excel matrix."],
@@ -510,7 +510,6 @@
     function formatAuthors(authorStr, style) {
       if (!authorStr || authorStr === "Unknown Author") return "Unknown Author";
       
-      // Clean and split multiple authors by comma or 'and'
       authorStr = authorStr.replace(/\s+and\s+/gi, ', ');
       let names = authorStr.split(',').map(n => n.trim()).filter(n => n);
       if (names.length === 0) return authorStr;
@@ -523,7 +522,7 @@
         
         if (style === 'APA') {
           return `${lastName}, ${initials}`;
-        } else { // IEEE / Harvard format: Initials Lastname
+        } else {
           return `${initials} ${lastName}`;
         }
       });
@@ -536,7 +535,7 @@
         } else {
           return formatted.slice(0, 19).join(', ') + ', ... ' + formatted[formatted.length - 1];
         }
-      } else { // IEEE & Harvard standard et al. rule for multiple authors
+      } else {
         if (formatted.length === 1) return formatted[0];
         if (formatted.length === 2) return `${formatted[0]} and ${formatted[1]}`;
         if (formatted.length > 3) {
@@ -556,7 +555,6 @@
       const style = document.getElementById('citationStyle').value;
       let html = '';
 
-      // Sort alphabetically by raw author string
       const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
 
       sorted.forEach((item, index) => {
@@ -566,13 +564,10 @@
         const title = item.title || "Untitled Paper";
 
         if (style === 'APA') {
-          // APA 7th: Author, A. A. (Year). Title of paper.
           citation = `${formattedAuthor} (${year}). <em>${title}</em>.`;
         } else if (style === 'IEEE') {
-          // IEEE: [1] A. A. Author, "Title of paper," Year.
           citation = `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.`;
         } else if (style === 'Harvard') {
-          // Harvard: Author, A. A. (Year) Title of paper.
           citation = `${formattedAuthor} (${year}) <em>${title}</em>.`;
         }
 
