@@ -46,9 +46,9 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Output Language (Hasil Ekstraksi)</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Output Language (Extraction Result)</label>
         <select id="targetLanguage" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition bg-white">
-          <option value="Indonesian">Bahasa Indonesia (Default)</option>
+          <option value="Indonesian">Bahasa Indonesia</option>
           <option value="English">English (International Standard)</option>
         </select>
       </div>
@@ -74,7 +74,7 @@
         </button>
       </div>
 
-      <!-- Kotak Status & Tombol Contact Me -->
+      <!-- Status & Error Box -->
       <div id="statusBox" class="hidden p-4 rounded-lg text-sm transition text-left border"></div>
     </div>
   </div>
@@ -86,16 +86,15 @@
     </p>
     <div class="space-y-4">
       <div>
-        <h3 class="font-bold text-slate-800 text-base">Butuh Bantuan atau Laporkan Kendala?</h3>
+        <h3 class="font-bold text-slate-800 text-base">Need Help or Report an Issue?</h3>
         <p class="mt-1 text-slate-500 leading-relaxed">
-          Jika Anda mengalami kendala teknis, eror sistem, atau ingin memberikan masukan, silakan hubungi pengembang melalui tautan di bawah ini:
+          If you encounter technical issues, system errors, or want to provide feedback, please contact the developer below:
         </p>
         <div class="mt-3 flex gap-3">
-          <!-- Ganti email dan nomor WA sesuai milik Anda -->
-          <a href="mailto:your-email@gmail.com?subject=Kendala%20Literature%20Matrix%20App" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
+          <a href="mailto:your-email@gmail.com?subject=Issue%20with%20Literature%20Matrix%20App" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
             📧 Email Developer
           </a>
-          <a href="https://wa.me/6281234567890?text=Halo,%20saya%20mengalami%20kendala%20pada%20aplikasi%20Literature%20Matrix." target="_blank" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
+          <a href="https://wa.me/6281234567890?text=Hello,%20I%20am%20experiencing%20an%20issue%20with%20the%20Literature%20Matrix%20app." target="_blank" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
             💬 WhatsApp Developer
           </a>
         </div>
@@ -113,6 +112,7 @@
       console.error('PDF.js Worker Error:', e);
     }
 
+    // URL Web App Google Apps Script Terbaru Anda
     const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzv2IuUIxp59Ex53sLNgnMRRULW75nPJFOKYmt0BIPgU5KmuCoXYbBlq1Xrn2q70T2Xyg/exec";
 
     let isCancelled = false;
@@ -176,24 +176,22 @@
       document.body.removeChild(link);
     }
 
-    // FITUR: Eror Cerdas + Tombol Kontak Langsung
     function getFriendlyErrorMessage(rawMsg) {
-      let baseMsg = "Terjadi kendala yang tidak diketahui.";
+      let baseMsg = "An unknown error occurred.";
       
       if (rawMsg.includes("Invalid API Key") || rawMsg.includes("Unauthorized") || rawMsg.includes("401") || rawMsg.includes("api key")) {
-        baseMsg = "❌ <strong>API Key Tidak Valid / Salah:</strong> Pastikan Groq API Key Anda benar (diawali <code>gsk_</code>). <a href='https://console.groq.com/keys' target='_blank' class='underline text-indigo-600 font-semibold'>Ambil kunci gratis di sini</a>.";
+        baseMsg = "❌ <strong>Invalid API Key:</strong> Please ensure your Groq API Key is correct (starts with <code>gsk_</code>). <a href='https://console.groq.com/keys' target='_blank' class='underline text-indigo-600 font-semibold'>Get a free key here</a>.";
       } 
       else if (rawMsg.includes("Rate limit") || rawMsg.includes("rate_limit")) {
-        baseMsg = "⏳ <strong>Batas Kuota Terlampaui (Rate Limit):</strong> Server Groq membatasi jumlah permintaan per menit untuk akun gratis. Tunggu sekitar 10-15 detik lalu coba lagi.";
+        baseMsg = "⏳ <strong>Rate Limit Exceeded:</strong> Groq server limits requests per minute for free accounts. Please wait about 10-15 seconds and try again.";
       } 
       else if (rawMsg.includes("Failed to fetch") || rawMsg.includes("NetworkError")) {
-        baseMsg = "🌐 <strong>Masalah Koneksi:</strong> Gagal terhubung ke peladen proxy. Periksa kembali sambungan internet Anda.";
+        baseMsg = "🌐 <strong>Connection Issue:</strong> Failed to reach the proxy server. Please check your internet connection.";
       } else {
-        baseMsg = `❌ <strong>Terjadi Eror:</strong> ${rawMsg}`;
+        baseMsg = `❌ <strong>Error:</strong> ${rawMsg}`;
       }
 
-      // Menyertakan tombol Hubungi Pengembang di dalam kotak eror
-      return `${baseMsg}<br><div class='mt-3 pt-2 border-t border-red-200 flex items-center justify-between text-xs'><span>Butuh bantuan lebih lanjut?</span> <a href='mailto:your-email@gmail.com?subject=Eror%20Literature%20Matrix&body=Halo,%20saya%20mendapat%20eror:%20${encodeURIComponent(rawMsg)}' class='font-bold text-red-700 underline'>Hubungi Developer ✉️</a></div>`;
+      return `${baseMsg}<br><div class='mt-3 pt-2 border-t border-red-200 flex items-center justify-between text-xs'><span>Need further assistance?</span> <a href='mailto:your-email@gmail.com?subject=Error%20Literature%20Matrix&body=Hello,%20I%20encountered%20this%20error:%20${encodeURIComponent(rawMsg)}' class='font-bold text-red-700 underline'>Contact Developer ✉️</a></div>`;
     }
 
     async function fetchViaGASProxy(text, apiKey, targetLanguage) {
@@ -232,7 +230,7 @@
       const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
 
       if (!apiKey) {
-        showStatus("⚠️ <strong>Peringatan:</strong> Groq API Key wajib diisi sebelum memproses data!", "error");
+        showStatus("⚠️ <strong>Warning:</strong> Groq API Key is required before processing data!", "error");
         return;
       }
 
@@ -250,13 +248,13 @@
           btnStop.classList.remove('opacity-70', 'cursor-not-allowed');
         }
 
-        showStatus(`Sedang memproses ${totalFiles} jurnal...`, "success");
+        showStatus(`Processing ${totalFiles} journals...`, "success");
 
         for (let i = 0; i < totalFiles; i++) {
           if (isCancelled) break;
 
           const currentFile = fileInput.files[i];
-          btnSubmit.innerText = `[${i+1}/${totalFiles}] Mengekstrak Teks PDF...`;
+          btnSubmit.innerText = `[${i+1}/${totalFiles}] Extracting PDF text...`;
           
           let extractedText = "";
           try {
@@ -269,7 +267,7 @@
           
           if (isCancelled) break;
           
-          btnSubmit.innerText = `[${i+1}/${totalFiles}] Menganalisis via AI...`;
+          btnSubmit.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
           try {
             const aiResult = await fetchViaGASProxy(extractedText, apiKey, targetLanguage);
             collectedData.push({
@@ -283,8 +281,8 @@
           } catch (err) {
             console.error(err);
             if (err.message.includes("Rate limit")) {
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Terkena Rate Limit! Menunggu 12 detik...`;
-              showStatus("⏳ Terkena batas limit Groq (Rate Limit). Sistem otomatis menjeda proses selama 12 detik...", "error");
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Rate limit hit! Waiting 12s...`;
+              showStatus("⏳ Groq rate limit reached. Pausing process for 12 seconds...", "error");
               await sleep(12000);
               i--; 
               continue;
@@ -298,7 +296,7 @@
             let countdown = 10; 
             while (countdown > 0) {
               if (isCancelled) break;
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Jeda Sistem: Menunggu ${countdown}s...`;
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
               await sleep(1000);
               countdown--;
             }
@@ -315,7 +313,7 @@
         
         if (collectedData.length > 0) {
           downloadExcel(collectedData);
-          showStatus(isCancelled ? "Proses dihentikan. File parsial berhasil diunduh." : `🎉 Berhasil! Mengunduh ${collectedData.length} data jurnal ke format Excel.`, "success");
+          showStatus(isCancelled ? "Process stopped. Partial file downloaded." : `🎉 Success! Downloaded ${collectedData.length} journal entries as Excel.`, "success");
         }
         
         fileInput.value = "";
@@ -324,7 +322,7 @@
 
       if (manualText && manualText.trim() !== "") {
         btnSubmit.disabled = true;
-        btnSubmit.innerText = "Memproses via AI...";
+        btnSubmit.innerText = "Processing via AI...";
         try {
           const aiResult = await fetchViaGASProxy(manualText, apiKey, targetLanguage);
           collectedData.push({
@@ -338,7 +336,7 @@
           downloadExcel(collectedData);
           btnSubmit.disabled = false;
           btnSubmit.innerText = "Extract & Download Excel (.xls)";
-          showStatus("🎉 Berhasil! File Excel berhasil diunduh.", "success");
+          showStatus("🎉 Success! Excel file downloaded.", "success");
           if (journalTextEl) journalTextEl.value = "";
         } catch (err) {
           btnSubmit.disabled = false;
@@ -348,7 +346,7 @@
         return;
       }
 
-      showStatus("⚠️ Silakan unggah minimal satu file PDF atau tempel teks jurnal terlebih dahulu!", "error");
+      showStatus("⚠️ Please upload at least one PDF or paste journal text!", "error");
     }
 
     function extractTextFromPdf(file) {
