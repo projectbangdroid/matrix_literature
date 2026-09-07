@@ -38,7 +38,10 @@
     <div class="space-y-4">
       
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Groq API Key</label>
+        <div class="flex justify-between items-center mb-1">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Groq API Key</label>
+          <a href="https://console.groq.com/keys" target="_blank" class="text-xs text-indigo-600 hover:underline font-medium">Get Free API Key ↗</a>
+        </div>
         <input type="password" id="apiKey" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
       </div>
 
@@ -71,7 +74,8 @@
         </button>
       </div>
 
-      <div id="statusBox" class="hidden p-3 rounded-lg text-sm font-medium text-center transition"></div>
+      <!-- Kotak Status & Tombol Contact Me -->
+      <div id="statusBox" class="hidden p-4 rounded-lg text-sm transition text-left border"></div>
     </div>
   </div>
 
@@ -80,12 +84,21 @@
     <p class="text-slate-500 leading-relaxed">
       This <strong>Free AI Literature Review Matrix Generator</strong> automates the process of extracting metadata from existing academic journals.
     </p>
-    <div class="space-y-5">
+    <div class="space-y-4">
       <div>
-        <h3 class="font-bold text-slate-800 text-base">How does this AI Abstract Extractor work?</h3>
+        <h3 class="font-bold text-slate-800 text-base">Butuh Bantuan atau Laporkan Kendala?</h3>
         <p class="mt-1 text-slate-500 leading-relaxed">
-          The tool processes your documents locally and safely structures your literature review matrix into a clean Excel file format that automatically opens into organized columns.
+          Jika Anda mengalami kendala teknis, eror sistem, atau ingin memberikan masukan, silakan hubungi pengembang melalui tautan di bawah ini:
         </p>
+        <div class="mt-3 flex gap-3">
+          <!-- Ganti email dan nomor WA sesuai milik Anda -->
+          <a href="mailto:your-email@gmail.com?subject=Kendala%20Literature%20Matrix%20App" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
+            📧 Email Developer
+          </a>
+          <a href="https://wa.me/6281234567890?text=Halo,%20saya%20mengalami%20kendala%20pada%20aplikasi%20Literature%20Matrix." target="_blank" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
+            💬 WhatsApp Developer
+          </a>
+        </div>
       </div>
     </div>
     <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
@@ -131,18 +144,15 @@
            .replace(/'/g, "&#039;");
     }
 
-    // PERBAIKAN: Mengubah format unduhan langsung menjadi Excel (.xls) dengan kolom rapi
     function downloadExcel(dataArray) {
       let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
       html += '<head><meta charset="utf-8"/></head><body>';
       html += '<table border="1">';
       
-      // Header Tabel Excel
       html += '<tr style="background-color: #f3f4f6; font-weight: bold; text-align: center;">';
       html += '<th>Title</th><th>Author</th><th>Year</th><th>Methodology</th><th>Findings</th><th>Research Gap</th>';
       html += '</tr>';
       
-      // Isi Data Baris demi Baris
       dataArray.forEach(row => {
         html += '<tr>';
         html += `<td>${escapeHtml(row.title)}</td>`;
@@ -164,6 +174,26 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    // FITUR: Eror Cerdas + Tombol Kontak Langsung
+    function getFriendlyErrorMessage(rawMsg) {
+      let baseMsg = "Terjadi kendala yang tidak diketahui.";
+      
+      if (rawMsg.includes("Invalid API Key") || rawMsg.includes("Unauthorized") || rawMsg.includes("401") || rawMsg.includes("api key")) {
+        baseMsg = "❌ <strong>API Key Tidak Valid / Salah:</strong> Pastikan Groq API Key Anda benar (diawali <code>gsk_</code>). <a href='https://console.groq.com/keys' target='_blank' class='underline text-indigo-600 font-semibold'>Ambil kunci gratis di sini</a>.";
+      } 
+      else if (rawMsg.includes("Rate limit") || rawMsg.includes("rate_limit")) {
+        baseMsg = "⏳ <strong>Batas Kuota Terlampaui (Rate Limit):</strong> Server Groq membatasi jumlah permintaan per menit untuk akun gratis. Tunggu sekitar 10-15 detik lalu coba lagi.";
+      } 
+      else if (rawMsg.includes("Failed to fetch") || rawMsg.includes("NetworkError")) {
+        baseMsg = "🌐 <strong>Masalah Koneksi:</strong> Gagal terhubung ke peladen proxy. Periksa kembali sambungan internet Anda.";
+      } else {
+        baseMsg = `❌ <strong>Terjadi Eror:</strong> ${rawMsg}`;
+      }
+
+      // Menyertakan tombol Hubungi Pengembang di dalam kotak eror
+      return `${baseMsg}<br><div class='mt-3 pt-2 border-t border-red-200 flex items-center justify-between text-xs'><span>Butuh bantuan lebih lanjut?</span> <a href='mailto:your-email@gmail.com?subject=Eror%20Literature%20Matrix&body=Halo,%20saya%20mendapat%20eror:%20${encodeURIComponent(rawMsg)}' class='font-bold text-red-700 underline'>Hubungi Developer ✉️</a></div>`;
     }
 
     async function fetchViaGASProxy(text, apiKey, targetLanguage) {
@@ -192,7 +222,7 @@
       const fileInput = document.getElementById('pdfFiles');
       const journalTextEl = document.getElementById('journalText');
       let manualText = journalTextEl ? journalTextEl.value : "";
-      const apiKey = document.getElementById('apiKey').value;
+      const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
       
       const btnSubmit = document.getElementById('btnSubmit');
@@ -202,7 +232,7 @@
       const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
 
       if (!apiKey) {
-        showStatus("Groq API Key is required!", "error");
+        showStatus("⚠️ <strong>Peringatan:</strong> Groq API Key wajib diisi sebelum memproses data!", "error");
         return;
       }
 
@@ -220,13 +250,13 @@
           btnStop.classList.remove('opacity-70', 'cursor-not-allowed');
         }
 
-        showStatus(`Processing ${totalFiles} journals...`, "success");
+        showStatus(`Sedang memproses ${totalFiles} jurnal...`, "success");
 
         for (let i = 0; i < totalFiles; i++) {
           if (isCancelled) break;
 
           const currentFile = fileInput.files[i];
-          btnSubmit.innerText = `[${i+1}/${totalFiles}] Extracting Text...`;
+          btnSubmit.innerText = `[${i+1}/${totalFiles}] Mengekstrak Teks PDF...`;
           
           let extractedText = "";
           try {
@@ -239,7 +269,7 @@
           
           if (isCancelled) break;
           
-          btnSubmit.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
+          btnSubmit.innerText = `[${i+1}/${totalFiles}] Menganalisis via AI...`;
           try {
             const aiResult = await fetchViaGASProxy(extractedText, apiKey, targetLanguage);
             collectedData.push({
@@ -253,10 +283,14 @@
           } catch (err) {
             console.error(err);
             if (err.message.includes("Rate limit")) {
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Rate Limit! Waiting 12s...`;
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Terkena Rate Limit! Menunggu 12 detik...`;
+              showStatus("⏳ Terkena batas limit Groq (Rate Limit). Sistem otomatis menjeda proses selama 12 detik...", "error");
               await sleep(12000);
               i--; 
               continue;
+            } else {
+              showStatus(getFriendlyErrorMessage(err.message), "error");
+              break; 
             }
           }
 
@@ -264,7 +298,7 @@
             let countdown = 10; 
             while (countdown > 0) {
               if (isCancelled) break;
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
+              btnSubmit.innerText = `[${i+1}/${totalFiles}] Jeda Sistem: Menunggu ${countdown}s...`;
               await sleep(1000);
               countdown--;
             }
@@ -281,9 +315,7 @@
         
         if (collectedData.length > 0) {
           downloadExcel(collectedData);
-          showStatus(isCancelled ? "Process stopped. Downloaded partial data." : `Success! Downloaded ${collectedData.length} entries as Excel.`, "success");
-        } else {
-          showStatus("Failed to extract any data. Check your API Key.", "error");
+          showStatus(isCancelled ? "Proses dihentikan. File parsial berhasil diunduh." : `🎉 Berhasil! Mengunduh ${collectedData.length} data jurnal ke format Excel.`, "success");
         }
         
         fileInput.value = "";
@@ -292,7 +324,7 @@
 
       if (manualText && manualText.trim() !== "") {
         btnSubmit.disabled = true;
-        btnSubmit.innerText = "Processing via AI...";
+        btnSubmit.innerText = "Memproses via AI...";
         try {
           const aiResult = await fetchViaGASProxy(manualText, apiKey, targetLanguage);
           collectedData.push({
@@ -306,17 +338,17 @@
           downloadExcel(collectedData);
           btnSubmit.disabled = false;
           btnSubmit.innerText = "Extract & Download Excel (.xls)";
-          showStatus("Success! Excel file downloaded.", "success");
+          showStatus("🎉 Berhasil! File Excel berhasil diunduh.", "success");
           if (journalTextEl) journalTextEl.value = "";
         } catch (err) {
           btnSubmit.disabled = false;
           btnSubmit.innerText = "Extract & Download Excel (.xls)";
-          showStatus("Error: " + err.message, "error");
+          showStatus(getFriendlyErrorMessage(err.message), "error");
         }
         return;
       }
 
-      showStatus("Please upload at least one PDF or paste journal text!", "error");
+      showStatus("⚠️ Silakan unggah minimal satu file PDF atau tempel teks jurnal terlebih dahulu!", "error");
     }
 
     function extractTextFromPdf(file) {
@@ -347,12 +379,16 @@
       });
     }
 
-    function showStatus(msg, type) {
+    function showStatus(htmlMsg, type) {
       const statusBox = document.getElementById('statusBox');
       if (statusBox) {
-        statusBox.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700');
-        statusBox.innerText = msg;
-        statusBox.classList.add(type === "success" ? 'bg-green-50' : 'bg-red-50', type === "success" ? 'text-green-700' : 'text-red-700');
+        statusBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200');
+        statusBox.innerHTML = htmlMsg;
+        if (type === "success") {
+          statusBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+        } else {
+          statusBox.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
+        }
       }
     }
   </script>
