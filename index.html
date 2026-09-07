@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academic AI Workspace | Literature Review & Synthesis Suite</title>
-  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, and research gap analysis.">
+  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, research gap analysis, and automatic bibliography.">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -17,36 +17,39 @@
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col md:flex-row">
 
   <!-- SIDEBAR NAVIGATION -->
-  <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-5 border-r border-slate-800 shrink-0">
+  <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col justify-between p-6 border-r border-slate-800 shrink-0">
     <div>
       <div class="flex items-center gap-3 mb-8 px-2">
-        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">🎓</div>
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
-          <h1 class="font-bold text-white text-sm tracking-wide">Academic Workspace</h1>
-          <p class="text-[11px] text-slate-400">AI Research Suite v2.0</p>
+          <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
+          <p class="text-xs text-slate-400">AI Research Suite v2.1</p>
         </div>
       </div>
 
-      <nav class="space-y-1.5">
-        <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition bg-indigo-600 text-white shadow-sm">
-          <span>📁</span> Matrix Generator
+      <nav class="space-y-2">
+        <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm">
+          <span class="text-base">📁</span> Matrix Generator
         </button>
-        <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300">
-          <span>✍️</span> Auto-Synthesis (Bab 2)
+        <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300">
+          <span class="text-base">✍️</span> Auto-Synthesis (Bab 2)
         </button>
-        <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300">
-          <span>💡</span> Gap & Novelty Finder
+        <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300">
+          <span class="text-base">💡</span> Gap & Novelty Finder
+        </button>
+        <button onclick="switchTab('references')" id="nav-references" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300">
+          <span class="text-base">📚</span> References & Citations
         </button>
       </nav>
     </div>
 
     <!-- Sidebar Footer / Memory Badge -->
-    <div class="pt-6 border-t border-slate-800 text-xs space-y-3">
-      <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+    <div class="pt-6 border-t border-slate-800 text-sm space-y-3">
+      <div class="bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50">
         <p class="text-slate-400 font-medium">Workspace Memory:</p>
-        <p id="memoryBadge" class="text-emerald-400 font-semibold mt-0.5">0 Papers Stored</p>
+        <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Papers Stored</p>
       </div>
-      <p class="text-[11px] text-slate-500 text-center">© 2026 Academic Workspace</p>
+      <p class="text-xs text-slate-500 text-center">© 2026 Academic Workspace</p>
     </div>
   </aside>
 
@@ -54,23 +57,23 @@
   <main class="flex-1 flex flex-col min-h-screen">
     
     <!-- TOP BAR (Global Settings) -->
-    <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10">
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10 shadow-xs">
       <div>
-        <h2 id="pageTitle" class="text-lg font-bold text-slate-900">Literature Review Matrix Generator</h2>
-        <p id="pageDesc" class="text-xs text-slate-500">Upload journal PDFs or paste text to extract metadata into a structured Excel matrix.</p>
+        <h2 id="pageTitle" class="text-xl font-bold text-slate-900">Literature Review Matrix Generator</h2>
+        <p id="pageDesc" class="text-sm text-slate-500">Upload journal PDFs or paste text to extract metadata into a structured Excel matrix.</p>
       </div>
       <div class="flex items-center gap-3 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-        <div class="relative flex-1 sm:w-56">
-          <input type="password" id="apiKey" placeholder="Groq API Key (gsk_...)" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 bg-slate-50 transition">
+        <div class="relative flex-1 sm:w-64">
+          <input type="password" id="apiKey" placeholder="Groq API Key (gsk_...)" class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50 transition font-medium">
         </div>
         
         <!-- Pilihan Bahasa AI dengan Keterangan Jelas -->
-        <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 border border-slate-200 rounded-lg">
+        <div class="flex items-center gap-2.5 bg-slate-50 px-3 py-1.5 border border-slate-200 rounded-xl">
           <div class="text-left hidden lg:block">
-            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">AI Output Lang</span>
-            <span class="block text-[9px] text-slate-500">Bahasa Hasil AI</span>
+            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Output Language</span>
+            <span class="block text-[11px] text-slate-600 font-medium">Bahasa Hasil AI</span>
           </div>
-          <select id="targetLanguage" class="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer">
+          <select id="targetLanguage" class="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer">
             <option value="Indonesian">🇮🇩 ID (Bahasa)</option>
             <option value="English">🇬🇧 EN (English)</option>
           </select>
@@ -83,48 +86,48 @@
 
       <!-- VIEW 1: MATRIX GENERATOR -->
       <section id="view-matrix" class="space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
-            <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
+            <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl p-1.5 cursor-pointer bg-slate-50/50">
           </div>
 
-          <div class="text-center text-xs font-bold text-slate-400 my-1">— OR —</div>
+          <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
 
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 2: Paste Single Journal Abstract / Text</label>
-            <textarea id="journalText" rows="3" placeholder="Paste journal text here..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 2: Paste Single Journal Abstract / Text</label>
+            <textarea id="journalText" rows="3" placeholder="Paste journal text or abstract here..." class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition resize-none bg-slate-50/50"></textarea>
           </div>
 
           <div class="flex gap-3 pt-2">
-            <button type="button" onclick="handleProcessMatrix()" id="btnSubmitMatrix" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+            <button type="button" onclick="handleProcessMatrix()" id="btnSubmitMatrix" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
               Extract & Add to Workspace (.xls)
             </button>
           </div>
         </div>
 
         <!-- Table Preview Container -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-slate-800 text-sm">Extracted Papers Table Preview</h3>
-            <button onclick="downloadExcel()" id="btnDownload" class="hidden px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition">
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8">
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="font-bold text-slate-900 text-base">Extracted Papers Table Preview</h3>
+            <button onclick="downloadExcel()" id="btnDownload" class="hidden px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition shadow-sm cursor-pointer">
               📥 Download Excel (.xls)
             </button>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse" id="previewTable">
+            <table class="w-full text-left text-sm border-collapse" id="previewTable">
               <thead>
-                <tr class="bg-slate-100 text-slate-700 border-b">
-                  <th class="p-2.5">Title</th>
-                  <th class="p-2.5">Author</th>
-                  <th class="p-2.5">Year</th>
-                  <th class="p-2.5">Methodology</th>
-                  <th class="p-2.5">Findings</th>
-                  <th class="p-2.5">Research Gap</th>
+                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                  <th class="p-3 font-bold">Title</th>
+                  <th class="p-3 font-bold">Author</th>
+                  <th class="p-3 font-bold">Year</th>
+                  <th class="p-3 font-bold">Methodology</th>
+                  <th class="p-3 font-bold">Findings</th>
+                  <th class="p-3 font-bold">Research Gap</th>
                 </tr>
               </thead>
               <tbody id="tableBody" class="text-slate-600 divide-y divide-slate-100">
-                <tr><td colspan="6" class="p-4 text-center text-slate-400">No papers extracted yet. Upload files or paste text above.</td></tr>
+                <tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm">No papers extracted yet. Upload files or paste text above.</td></tr>
               </tbody>
             </table>
           </div>
@@ -133,51 +136,86 @@
 
       <!-- VIEW 2: AUTO-SYNTHESIS -->
       <section id="view-synthesis" class="hidden space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
-          <h3 class="font-bold text-slate-900 text-base">Chapter 2 Narrative Synthesis Generator</h3>
-          <p class="text-xs text-slate-500">Synthesize all papers currently stored in your workspace memory into an academic literature review prose.</p>
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
+          <h3 class="font-bold text-slate-900 text-lg">Chapter 2 Narrative Synthesis Generator</h3>
+          <p class="text-sm text-slate-500">Synthesize all papers currently stored in your workspace memory into a professional academic literature review prose.</p>
           
-          <button type="button" onclick="handleAutoSynthesis()" id="btnSynthesis" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+          <button type="button" onclick="handleAutoSynthesis()" id="btnSynthesis" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
             ✨ Generate Chapter 2 Synthesis
           </button>
         </div>
 
-        <div id="synthesisResultBox" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
+        <div id="synthesisResultBox" class="hidden bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-4">
           <div class="flex justify-between items-center">
-            <h4 class="font-bold text-slate-800 text-sm">Generated Academic Draft</h4>
-            <button onclick="copySynthesis()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
+            <h4 class="font-bold text-slate-900 text-base">Generated Academic Draft</h4>
+            <button onclick="copySynthesis()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition cursor-pointer">
               📋 Copy Text
             </button>
           </div>
-          <div id="synthesisContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/60 whitespace-pre-line"></div>
+          <div id="synthesisContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-5 rounded-xl border border-slate-200 whitespace-pre-line"></div>
         </div>
       </section>
 
       <!-- VIEW 3: GAP & NOVELTY FINDER -->
       <section id="view-gap" class="hidden space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
-          <h3 class="font-bold text-slate-900 text-base">Research Gap & Novelty Strategy Finder</h3>
-          <p class="text-xs text-slate-500">Analyze overarching literature gaps from your workspace papers and discover high-impact research topics.</p>
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
+          <h3 class="font-bold text-slate-900 text-lg">Research Gap & Novelty Strategy Finder</h3>
+          <p class="text-sm text-slate-500">Analyze overarching literature gaps from your workspace papers and discover high-impact research topics.</p>
           
-          <button type="button" onclick="handleGapFinder()" id="btnGap" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+          <button type="button" onclick="handleGapFinder()" id="btnGap" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
             💡 Analyze Gaps & Novelty Ideas
           </button>
         </div>
 
         <div id="gapResultBox" class="hidden space-y-6">
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-3">
-            <h4 class="font-bold text-slate-800 text-sm">Literature Gap Overview</h4>
-            <div id="gapOverviewContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/60"></div>
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-3">
+            <h4 class="font-bold text-slate-900 text-base">Literature Gap Overview</h4>
+            <div id="gapOverviewContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-5 rounded-xl border border-slate-200"></div>
           </div>
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-3">
-            <h4 class="font-bold text-slate-800 text-sm">Novelty Recommendations & Future Topics</h4>
-            <div id="gapRecsContent" class="text-sm text-slate-700 leading-relaxed bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 whitespace-pre-line"></div>
+          <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-3">
+            <h4 class="font-bold text-slate-900 text-base">Novelty Recommendations & Future Topics</h4>
+            <div id="gapRecsContent" class="text-sm text-slate-700 leading-relaxed bg-indigo-50/40 p-5 rounded-xl border border-indigo-100 whitespace-pre-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: REFERENCES & CITATIONS -->
+      <section id="view-references" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 class="font-bold text-slate-900 text-lg">Automatic Bibliography & Citations</h3>
+              <p class="text-sm text-slate-500 mt-0.5">Generate formatted reference lists instantly from your workspace memory.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <select id="citationStyle" onchange="renderReferences()" class="px-3.5 py-2 border border-slate-200 rounded-xl text-sm font-semibold bg-white text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-xs">
+                <option value="APA">APA 7th Edition</option>
+                <option value="IEEE">IEEE Format</option>
+                <option value="Harvard">Harvard Style</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3 pt-2 border-t border-slate-100">
+            <button type="button" onclick="copyAllReferences()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition cursor-pointer flex items-center gap-2">
+              📋 Copy All References
+            </button>
+            <button type="button" onclick="exportBibTeX()" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-xl transition cursor-pointer flex items-center gap-2">
+              📥 Export BibTeX (.bib)
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-4">
+          <h4 class="font-bold text-slate-900 text-base">Formatted Reference List</h4>
+          <div id="referencesListContent" class="space-y-4 text-sm text-slate-700">
+            <div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">No papers stored in workspace memory yet. Extract papers in Matrix Generator first.</div>
           </div>
         </div>
       </section>
 
       <!-- Global Status Box -->
-      <div id="statusBox" class="hidden p-4 rounded-xl text-sm transition text-left border"></div>
+      <div id="statusBox" class="hidden p-4 rounded-xl text-sm font-medium transition text-left border shadow-xs"></div>
     </div>
   </main>
 
@@ -195,24 +233,30 @@
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     function switchTab(tab) {
-      document.getElementById('view-matrix').classList.add('hidden');
-      document.getElementById('view-synthesis').classList.add('hidden');
-      document.getElementById('view-gap').classList.add('hidden');
+      ['matrix', 'synthesis', 'gap', 'references'].forEach(t => {
+        const viewEl = document.getElementById('view-' + t);
+        const navEl = document.getElementById('nav-' + t);
+        if (viewEl) viewEl.classList.add('hidden');
+        if (navEl) navEl.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300";
+      });
 
-      document.getElementById('nav-matrix').className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300";
-      document.getElementById('nav-synthesis').className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300";
-      document.getElementById('nav-gap').className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300";
-
-      document.getElementById('view-' + tab).classList.remove('hidden');
-      document.getElementById('nav-' + tab).className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition bg-indigo-600 text-white shadow-sm";
+      const activeView = document.getElementById('view-' + tab);
+      const activeNav = document.getElementById('nav-' + tab);
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeNav) activeNav.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm";
 
       const titles = {
         matrix: ["Literature Review Matrix Generator", "Upload journal PDFs or paste text to extract metadata into a structured Excel matrix."],
-        synthesis: ["Chapter 2 Auto-Synthesis", "Synthesize your workspace papers into a coherent academic literature review."],
-        gap: ["Research Gap & Novelty Finder", "Identify overarching research gaps and discover novel topic recommendations."]
+        synthesis: ["Chapter 2 Auto-Synthesis", "Synthesize your workspace papers into a coherent academic literature review prose."],
+        gap: ["Research Gap & Novelty Finder", "Identify overarching research gaps and discover novel topic recommendations."],
+        references: ["References & Citations", "Automatically generate formatted bibliographies and reference lists from your stored papers."]
       };
       document.getElementById('pageTitle').innerText = titles[tab][0];
       document.getElementById('pageDesc').innerText = titles[tab][1];
+      
+      if (tab === 'references') {
+        renderReferences();
+      }
       hideStatus();
     }
 
@@ -238,18 +282,18 @@
     function renderTable() {
       const tbody = document.getElementById('tableBody');
       if (window.appCollectedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No papers extracted yet. Upload files or paste text above.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm">No papers extracted yet. Upload files or paste text above.</td></tr>';
         return;
       }
       let html = '';
       window.appCollectedData.forEach(row => {
-        html += `<tr class="hover:bg-slate-50/80">
-          <td class="p-2.5 font-medium text-slate-800">${escapeHtml(row.title)}</td>
-          <td class="p-2.5">${escapeHtml(row.author)}</td>
-          <td class="p-2.5">${escapeHtml(row.year)}</td>
-          <td class="p-2.5">${escapeHtml(row.method)}</td>
-          <td class="p-2.5">${escapeHtml(row.findings)}</td>
-          <td class="p-2.5">${escapeHtml(row.gap)}</td>
+        html += `<tr class="hover:bg-slate-50/80 transition">
+          <td class="p-3 font-medium text-slate-900">${escapeHtml(row.title)}</td>
+          <td class="p-3 text-slate-700">${escapeHtml(row.author)}</td>
+          <td class="p-3 text-slate-700">${escapeHtml(row.year)}</td>
+          <td class="p-3 text-slate-700">${escapeHtml(row.method)}</td>
+          <td class="p-3 text-slate-700">${escapeHtml(row.findings)}</td>
+          <td class="p-3 text-slate-700">${escapeHtml(row.gap)}</td>
         </tr>`;
       });
       tbody.innerHTML = html;
@@ -286,7 +330,6 @@
       return result.data;
     }
 
-    // FITUR UTAMA: Proses Ekstraksi dengan Indikator Progres & Cooldown Antar File
     async function handleProcessMatrix() {
       const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
@@ -351,14 +394,13 @@
                 showStatus(`⏳ Rate limit hit. Pausing 12s before retrying file ${i+1}...`, "error");
                 btn.innerText = `[${i+1}/${total}] Rate limit! Waiting 12s...`;
                 await sleep(12000);
-                i--; // Ulangi file yang sama setelah cooldown
+                i--; 
                 continue;
               } else {
                 throw err;
               }
             }
 
-            // Cooldown antar file untuk menjaga kestabilan API Groq gratis
             if (i < total - 1) {
               let countdown = 10;
               while (countdown > 0) {
@@ -462,6 +504,100 @@
         btn.disabled = false;
         btn.innerText = "💡 Analyze Gaps & Novelty Ideas";
       }
+    }
+
+    function renderReferences() {
+      const container = document.getElementById('referencesListContent');
+      if (window.appCollectedData.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">No papers stored in workspace memory yet. Extract papers in Matrix Generator first.</div>';
+        return;
+      }
+
+      const style = document.getElementById('citationStyle').value;
+      let html = '';
+
+      // Sort alphabetically by author
+      const sorted = [...window.appCollectedData].sort((a, b) => a.author.localeCompare(b.author));
+
+      sorted.forEach((item, index) => {
+        let citation = '';
+        const author = item.author || "Unknown Author";
+        const year = item.year || "n.d.";
+        const title = item.title || "Untitled Paper";
+
+        if (style === 'APA') {
+          citation = `${author} (${year}). <em>${title}</em>.`;
+        } else if (style === 'IEEE') {
+          citation = `[${index + 1}] ${author}, "${title}," ${year}.`;
+        } else if (style === 'Harvard') {
+          citation = `${author} (${year}) <em>${title}</em>.`;
+        }
+
+        html += `<div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="flex-1 text-slate-800 text-sm leading-relaxed">${index + 1}. ${citation}</div>
+          <button onclick="copySingleRef(${index}, '${style}')" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition shrink-0 cursor-pointer">
+            📋 Copy
+          </button>
+        </div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function copySingleRef(index, style) {
+      const sorted = [...window.appCollectedData].sort((a, b) => a.author.localeCompare(b.author));
+      const item = sorted[index];
+      const author = item.author || "Unknown Author";
+      const year = item.year || "n.d.";
+      const title = item.title || "Untitled Paper";
+
+      let citation = '';
+      if (style === 'APA') citation = `${author} (${year}). ${title}.`;
+      else if (style === 'IEEE') citation = `[${index + 1}] ${author}, "${title}," ${year}.`;
+      else if (style === 'Harvard') citation = `${author} (${year}) ${title}.`;
+
+      navigator.clipboard.writeText(citation);
+      alert("Citation copied to clipboard!");
+    }
+
+    function copyAllReferences() {
+      if (window.appCollectedData.length === 0) return;
+      const style = document.getElementById('citationStyle').value;
+      const sorted = [...window.appCollectedData].sort((a, b) => a.author.localeCompare(b.author));
+      
+      let allText = '';
+      sorted.forEach((item, index) => {
+        const author = item.author || "Unknown Author";
+        const year = item.year || "n.d.";
+        const title = item.title || "Untitled Paper";
+        if (style === 'APA') allText += `${author} (${year}). ${title}.\n`;
+        else if (style === 'IEEE') allText += `[${index + 1}] ${author}, "${title}," ${year}.\n`;
+        else if (style === 'Harvard') allText += `${author} (${year}) ${title}.\n`;
+      });
+
+      navigator.clipboard.writeText(allText);
+      alert("All references copied to clipboard!");
+    }
+
+    function exportBibTeX() {
+      if (window.appCollectedData.length === 0) return;
+      let bib = '';
+      window.appCollectedData.forEach((item, index) => {
+        const citeKey = `ref${index + 1}_${(item.author || 'author').split(' ')[0].toLowerCase()}`;
+        bib += `@article{${citeKey},\n`;
+        bib += `  title={${item.title}},\n`;
+        bib += `  author={${item.author}},\n`;
+        bib += `  year={${item.year}}\n`;
+        bib += `}\n\n`;
+      });
+
+      const blob = new Blob([bib], { type: 'text/plain;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "references.bib";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function copySynthesis() {
