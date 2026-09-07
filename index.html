@@ -1,19 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Literature Review Matrix Generator | Extract Abstract to Excel</title>
-  <meta name="description" content="Extract journal abstracts, methodology, findings, and research gaps directly into a clean Excel file.">
-  
-  <!-- Microsoft Clarity Analytics -->
-  <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "wy38xb3csa");
-  </script>
+  <title>Academic AI Workspace | Literature Review & Synthesis Suite</title>
+  <meta name="description" content="All-in-one AI academic workspace for literature extraction, auto-synthesis, and research gap analysis.">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -23,85 +14,164 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col justify-center items-center p-4">
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col md:flex-row">
 
-  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8">
-    
-    <div class="mb-6 text-center">
-      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Literature Review Matrix Generator</h1>
-      <p class="text-sm text-slate-500 mt-1">Upload journal PDFs and instantly download the extracted matrix as a ready-to-use Excel file (.xls).</p>
-      <div class="mt-2 text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg inline-block border border-emerald-100">
-        ✨ <strong>Upgrade:</strong> Direct Excel output! No delimiter settings needed.
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between p-5 border-r border-slate-800 shrink-0">
+    <div>
+      <div class="flex items-center gap-3 mb-8 px-2">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">🎓</div>
+        <div>
+          <h1 class="font-bold text-white text-sm tracking-wide">Academic Workspace</h1>
+          <p class="text-[11px] text-slate-400">AI Research Suite v2.0</p>
+        </div>
       </div>
+
+      <nav class="space-y-1.5">
+        <button onclick="switchTab('matrix')" id="nav-matrix" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition bg-indigo-600 text-white shadow-sm">
+          <span>📁</span> Matrix Generator
+        </button>
+        <button onclick="switchTab('synthesis')" id="nav-synthesis" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300">
+          <span>✍️</span> Auto-Synthesis (Bab 2)
+        </button>
+        <button onclick="switchTab('gap')" id="nav-gap" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300">
+          <span>💡</span> Gap & Novelty Finder
+        </button>
+      </nav>
     </div>
 
-    <div class="space-y-4">
-      
-      <div>
-        <div class="flex justify-between items-center mb-1">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Groq API Key</label>
-          <a href="https://console.groq.com/keys" target="_blank" class="text-xs text-indigo-600 hover:underline font-medium">Get Free API Key ↗</a>
-        </div>
-        <input type="password" id="apiKey" placeholder="gsk_..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition">
+    <!-- Sidebar Footer / Memory Badge -->
+    <div class="pt-6 border-t border-slate-800 text-xs space-y-3">
+      <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+        <p class="text-slate-400 font-medium">Memory Status:</p>
+        <p id="memoryBadge" class="text-emerald-400 font-semibold mt-0.5">0 Papers in Workspace</p>
       </div>
+      <p class="text-[11px] text-slate-500 text-center">© 2026 Academic Workspace</p>
+    </div>
+  </aside>
 
+  <!-- MAIN WORKSPACE CONTAINER -->
+  <main class="flex-1 flex flex-col min-h-screen">
+    
+    <!-- TOP BAR (Global Settings) -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10">
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Output Language (Extraction Result)</label>
-        <select id="targetLanguage" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition bg-white">
-          <option value="Indonesian">Bahasa Indonesia</option>
-          <option value="English">English (International Standard)</option>
+        <h2 id="pageTitle" class="text-lg font-bold text-slate-900">Literature Review Matrix Generator</h2>
+        <p id="pageDesc" class="text-xs text-slate-500">Upload journal PDFs or paste text to extract metadata into a structured Excel matrix.</p>
+      </div>
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="relative flex-1 sm:w-64">
+          <input type="password" id="apiKey" placeholder="Groq API Key (gsk_...)" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 bg-slate-50 transition">
+        </div>
+        <select id="targetLanguage" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500 bg-white font-medium">
+          <option value="Indonesian">ID (Bahasa)</option>
+          <option value="English">EN (English)</option>
         </select>
       </div>
+    </header>
 
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
-        <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
-      </div>
+    <!-- CONTENT SECTIONS (VIEWS) -->
+    <div class="p-6 md:p-8 max-w-5xl w-full mx-auto flex-1 space-y-6">
 
-      <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
+      <!-- VIEW 1: MATRIX GENERATOR -->
+      <section id="view-matrix" class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 1: Upload Journal PDFs (Multiple Allowed)</label>
+            <input type="file" id="pdfFiles" accept="application/pdf" multiple class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-lg p-1">
+          </div>
 
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 2: Paste Single Journal Abstract / Text</label>
-        <textarea id="journalText" rows="4" placeholder="Or paste text here manually if you only have one abstract..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
-      </div>
+          <div class="text-center text-xs font-bold text-slate-400 my-1">— OR —</div>
 
-      <div class="flex gap-3">
-        <button type="button" onclick="handleProcess()" id="btnSubmit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition flex justify-center items-center shadow-sm">
-          <span>Extract & Download Excel (.xls)</span>
-        </button>
-        <button type="button" onclick="stopProcess()" id="btnStop" class="hidden bg-red-500 hover:bg-red-600 text-white font-medium px-6 py-2.5 rounded-lg text-sm transition justify-center items-center shadow-sm">
-          <span>Stop</span>
-        </button>
-      </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Option 2: Paste Single Journal Abstract / Text</label>
+            <textarea id="journalText" rows="3" placeholder="Paste journal text here..." class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+          </div>
 
-      <!-- Status & Error Box -->
-      <div id="statusBox" class="hidden p-4 rounded-lg text-sm transition text-left border"></div>
-    </div>
-  </div>
-
-  <div class="w-full max-w-2xl mt-12 pt-6 border-t border-slate-200 text-slate-600 text-sm space-y-6">
-    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Systematic Literature Review Made Easy</h2>
-    <p class="text-slate-500 leading-relaxed">
-      This <strong>Free AI Literature Review Matrix Generator</strong> automates the process of extracting metadata from existing academic journals.
-    </p>
-    <div class="space-y-4">
-      <div>
-        <h3 class="font-bold text-slate-800 text-base">Need Help or Report an Issue?</h3>
-        <p class="mt-1 text-slate-500 leading-relaxed">
-          If you encounter technical issues, system errors, or want to provide feedback, please contact the developer below:
-        </p>
-        <div class="mt-3 flex gap-3">
-          <a href="mailto:bangdroid@gmail.com?subject=Issue%20with%20Literature%20Matrix%20App" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition inline-flex items-center gap-1.5">
-            📧 Email Developer
-          </a>
-          
+          <div class="flex gap-3 pt-2">
+            <button type="button" onclick="handleProcessMatrix()" id="btnSubmitMatrix" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+              Extract & Add to Workspace (.xls)
+            </button>
+          </div>
         </div>
-      </div>
+
+        <!-- Table Preview Container -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-800 text-sm">Extracted Papers Table Preview</h3>
+            <button onclick="downloadExcel()" id="btnDownload" class="hidden px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition">
+              📥 Download Excel (.xls)
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse" id="previewTable">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-b">
+                  <th class="p-2.5">Title</th>
+                  <th class="p-2.5">Author</th>
+                  <th class="p-2.5">Year</th>
+                  <th class="p-2.5">Methodology</th>
+                  <th class="p-2.5">Findings</th>
+                  <th class="p-2.5">Research Gap</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody" class="text-slate-600 divide-y divide-slate-100">
+                <tr><td colspan="6" class="p-4 text-center text-slate-400">No papers extracted yet. Upload files or paste text above.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: AUTO-SYNTHESIS -->
+      <section id="view-synthesis" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
+          <h3 class="font-bold text-slate-900 text-base">Chapter 2 Narrative Synthesis Generator</h3>
+          <p class="text-xs text-slate-500">Synthesize all papers currently stored in your workspace memory into an academic literature review prose.</p>
+          
+          <button type="button" onclick="handleAutoSynthesis()" id="btnSynthesis" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+            ✨ Generate Chapter 2 Synthesis
+          </button>
+        </div>
+
+        <div id="synthesisResultBox" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
+          <div class="flex justify-between items-center">
+            <h4 class="font-bold text-slate-800 text-sm">Generated Academic Draft</h4>
+            <button onclick="copySynthesis()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
+              📋 Copy Text
+            </button>
+          </div>
+          <div id="synthesisContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/60 whitespace-pre-line"></div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: GAP & NOVELTY FINDER -->
+      <section id="view-gap" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-4">
+          <h3 class="font-bold text-slate-900 text-base">Research Gap & Novelty Strategy Finder</h3>
+          <p class="text-xs text-slate-500">Analyze overarching literature gaps from your workspace papers and discover high-impact research topics.</p>
+          
+          <button type="button" onclick="handleGapFinder()" id="btnGap" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm">
+            💡 Analyze Gaps & Novelty Ideas
+          </button>
+        </div>
+
+        <div id="gapResultBox" class="hidden space-y-6">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-3">
+            <h4 class="font-bold text-slate-800 text-sm">Literature Gap Overview</h4>
+            <div id="gapOverviewContent" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200/60"></div>
+          </div>
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-3">
+            <h4 class="font-bold text-slate-800 text-sm">Novelty Recommendations & Future Topics</h4>
+            <div id="gapRecsContent" class="text-sm text-slate-700 leading-relaxed bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 whitespace-pre-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Global Status Box -->
+      <div id="statusBox" class="hidden p-4 rounded-xl text-sm transition text-left border"></div>
     </div>
-    <div class="text-center text-xs text-slate-400 pt-8 border-t border-slate-100">
-      <p>© 2026 Literature Review Matrix Generator. Powered by Vercel & GAS.</p>
-    </div>
-  </div>
+  </main>
 
   <script>
     try {
@@ -110,19 +180,38 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    // URL Web App Google Apps Script Terbaru Anda
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzv2IuUIxp59Ex53sLNgnMRRULW75nPJFOKYmt0BIPgU5KmuCoXYbBlq1Xrn2q70T2Xyg/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzaY4bY0AzaCegA_C4ByiaAJvsa8JqaaazwqqOlSauhZZbrlsZFCbUs9-dPCO1c8sRz-w/exec";
+    
+    // Global Memory State for Workspace Papers
+    window.appCollectedData = [];
 
-    let isCancelled = false;
-    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    function switchTab(tab) {
+      document.getElementById('view-matrix').classList.add('hidden');
+      document.getElementById('view-synthesis').classList.add('hidden');
+      document.getElementById('view-gap').classList.add('hidden');
 
-    function stopProcess() {
-      isCancelled = true;
-      const btnStop = document.getElementById('btnStop');
-      if (btnStop) {
-        btnStop.innerText = "Stopping...";
-        btnStop.disabled = true;
-        btnStop.classList.add('opacity-70', 'cursor-not-allowed');
+      document.getElementById('nav-matrix').className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300";
+      document.getElementById('nav-synthesis').className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300";
+      document.getElementById('nav-gap').className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition hover:bg-slate-800 text-slate-300";
+
+      document.getElementById('view-' + tab).classList.remove('hidden');
+      document.getElementById('nav-' + tab).className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition bg-indigo-600 text-white shadow-sm";
+
+      const titles = {
+        matrix: ["Literature Review Matrix Generator", "Upload journal PDFs or paste text to extract metadata into a structured Excel matrix."],
+        synthesis: ["Chapter 2 Auto-Synthesis", "Synthesize your workspace papers into a coherent academic literature review."],
+        gap: ["Research Gap & Novelty Finder", "Identify overarching research gaps and discover novel topic recommendations."]
+      };
+      document.getElementById('pageTitle').innerText = titles[tab][0];
+      document.getElementById('pageDesc').innerText = titles[tab][1];
+      hideStatus();
+    }
+
+    function updateMemoryBadge() {
+      const count = window.appCollectedData.length;
+      document.getElementById('memoryBadge').innerText = `${count} Paper${count === 1 ? '' : 's'} in Workspace`;
+      if (count > 0) {
+        document.getElementById('btnDownload').classList.remove('hidden');
       }
     }
 
@@ -134,217 +223,187 @@
     }
 
     function escapeHtml(unsafe) {
-      return String(unsafe)
-           .replace(/&/g, "&amp;")
-           .replace(/</g, "&lt;")
-           .replace(/>/g, "&gt;")
-           .replace(/"/g, "&quot;")
-           .replace(/'/g, "&#039;");
+      return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    function downloadExcel(dataArray) {
-      let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-      html += '<head><meta charset="utf-8"/></head><body>';
-      html += '<table border="1">';
-      
-      html += '<tr style="background-color: #f3f4f6; font-weight: bold; text-align: center;">';
-      html += '<th>Title</th><th>Author</th><th>Year</th><th>Methodology</th><th>Findings</th><th>Research Gap</th>';
-      html += '</tr>';
-      
-      dataArray.forEach(row => {
-        html += '<tr>';
-        html += `<td>${escapeHtml(row.title)}</td>`;
-        html += `<td>${escapeHtml(row.author)}</td>`;
-        html += `<td>${escapeHtml(row.year)}</td>`;
-        html += `<td>${escapeHtml(row.method)}</td>`;
-        html += `<td>${escapeHtml(row.findings)}</td>`;
-        html += `<td>${escapeHtml(row.gap)}</td>`;
-        html += '</tr>';
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      if (window.appCollectedData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No papers extracted yet. Upload files or paste text above.</td></tr>';
+        return;
+      }
+      let html = '';
+      window.appCollectedData.forEach(row => {
+        html += `<tr class="hover:bg-slate-50/80">
+          <td class="p-2.5 font-medium text-slate-800">${escapeHtml(row.title)}</td>
+          <td class="p-2.5">${escapeHtml(row.author)}</td>
+          <td class="p-2.5">${escapeHtml(row.year)}</td>
+          <td class="p-2.5">${escapeHtml(row.method)}</td>
+          <td class="p-2.5">${escapeHtml(row.findings)}</td>
+          <td class="p-2.5">${escapeHtml(row.gap)}</td>
+        </tr>`;
       });
-      
+      tbody.innerHTML = html;
+      updateMemoryBadge();
+    }
+
+    function downloadExcel() {
+      if (window.appCollectedData.length === 0) return;
+      let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+      html += '<head><meta charset="utf-8"/></head><body><table border="1">';
+      html += '<tr style="background-color: #f3f4f6; font-weight: bold; text-align: center;"><th>Title</th><th>Author</th><th>Year</th><th>Methodology</th><th>Findings</th><th>Research Gap</th></tr>';
+      window.appCollectedData.forEach(row => {
+        html += `<tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(row.author)}</td><td>${escapeHtml(row.year)}</td><td>${escapeHtml(row.method)}</td><td>${escapeHtml(row.findings)}</td><td>${escapeHtml(row.gap)}</td></tr>`;
+      });
       html += '</table></body></html>';
 
       const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", "Literature_Matrix_Result.xls");
+      link.href = URL.createObjectURL(blob);
+      link.download = "Academic_Workspace_Matrix.xls";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
 
-    function getFriendlyErrorMessage(rawMsg) {
-      let baseMsg = "An unknown error occurred.";
-      
-      if (rawMsg.includes("Invalid API Key") || rawMsg.includes("Unauthorized") || rawMsg.includes("401") || rawMsg.includes("api key")) {
-        baseMsg = "❌ <strong>Invalid API Key:</strong> Please ensure your Groq API Key is correct (starts with <code>gsk_</code>). <a href='https://console.groq.com/keys' target='_blank' class='underline text-indigo-600 font-semibold'>Get a free key here</a>.";
-      } 
-      else if (rawMsg.includes("Rate limit") || rawMsg.includes("rate_limit")) {
-        baseMsg = "⏳ <strong>Rate Limit Exceeded:</strong> Groq server limits requests per minute for free accounts. Please wait about 10-15 seconds and try again.";
-      } 
-      else if (rawMsg.includes("Failed to fetch") || rawMsg.includes("NetworkError")) {
-        baseMsg = "🌐 <strong>Connection Issue:</strong> Failed to reach the proxy server. Please check your internet connection.";
-      } else {
-        baseMsg = `❌ <strong>Error:</strong> ${rawMsg}`;
-      }
-
-      return `${baseMsg}<br><div class='mt-3 pt-2 border-t border-red-200 flex items-center justify-between text-xs'><span>Need further assistance?</span> <a href='mailto:your-email@gmail.com?subject=Error%20Literature%20Matrix&body=Hello,%20I%20encountered%20this%20error:%20${encodeURIComponent(rawMsg)}' class='font-bold text-red-700 underline'>Contact Developer ✉️</a></div>`;
-    }
-
-    async function fetchViaGASProxy(text, apiKey, targetLanguage) {
-      const payload = {
-        journalText: text,
-        apiKey: apiKey,
-        targetLanguage: targetLanguage
-      };
-
+    async function callGasProxy(payload) {
       const response = await fetch(CONFIG_GAS_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-
       const result = await response.json();
-      
-      if (result.status === "error") {
-        throw new Error(result.message);
-      }
+      if (result.status === "error") throw new Error(result.message);
       return result.data;
     }
 
-    async function handleProcess() {
-      isCancelled = false;
-      const fileInput = document.getElementById('pdfFiles');
-      const journalTextEl = document.getElementById('journalText');
-      let manualText = journalTextEl ? journalTextEl.value : "";
+    async function handleProcessMatrix() {
       const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
-      
-      const btnSubmit = document.getElementById('btnSubmit');
-      const btnStop = document.getElementById('btnStop');
-      
-      let collectedData = [];
-      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
+      const fileInput = document.getElementById('pdfFiles');
+      const textInput = document.getElementById('journalText');
+      const btn = document.getElementById('btnSubmitMatrix');
 
       if (!apiKey) {
-        showStatus("⚠️ <strong>Warning:</strong> Groq API Key is required before processing data!", "error");
+        showStatus("⚠️ Please enter your Groq API Key first.", "error");
         return;
       }
 
+      let textsToProcess = [];
       if (fileInput && fileInput.files.length > 0) {
-        const totalFiles = fileInput.files.length;
-        
-        btnSubmit.disabled = true;
-        btnSubmit.classList.add('opacity-90');
-        
-        if (btnStop) {
-          btnStop.classList.remove('hidden');
-          btnStop.classList.add('flex');
-          btnStop.innerText = "Stop";
-          btnStop.disabled = false;
-          btnStop.classList.remove('opacity-70', 'cursor-not-allowed');
-        }
-
-        showStatus(`Processing ${totalFiles} journals...`, "success");
-
-        for (let i = 0; i < totalFiles; i++) {
-          if (isCancelled) break;
-
-          const currentFile = fileInput.files[i];
-          btnSubmit.innerText = `[${i+1}/${totalFiles}] Extracting PDF text...`;
-          
-          let extractedText = "";
+        for (let file of fileInput.files) {
           try {
-            extractedText = await extractTextFromPdf(currentFile);
-            extractedText = extractedText.replace(/[^\x20-\x7E\r\n]/g, " ");
-          } catch (err) {
-            console.error("PDF Extraction failed for file", i, err);
-            continue;
-          }
-          
-          if (isCancelled) break;
-          
-          btnSubmit.innerText = `[${i+1}/${totalFiles}] Analyzing via AI...`;
-          try {
-            const aiResult = await fetchViaGASProxy(extractedText, apiKey, targetLanguage);
-            collectedData.push({
-              title: cleanOutput(aiResult.title, fallbackText),
-              author: cleanOutput(aiResult.author, fallbackText),
-              year: cleanOutput(aiResult.year, fallbackText),
-              method: cleanOutput(aiResult.method, fallbackText),
-              findings: cleanOutput(aiResult.findings, fallbackText),
-              gap: cleanOutput(aiResult.gap, fallbackText)
-            });
-          } catch (err) {
-            console.error(err);
-            if (err.message.includes("Rate limit")) {
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Rate limit hit! Waiting 12s...`;
-              showStatus("⏳ Groq rate limit reached. Pausing process for 12 seconds...", "error");
-              await sleep(12000);
-              i--; 
-              continue;
-            } else {
-              showStatus(getFriendlyErrorMessage(err.message), "error");
-              break; 
-            }
-          }
+            let t = await extractTextFromPdf(file);
+            textsToProcess.push(t.replace(/[^\x20-\x7E\r\n]/g, " "));
+          } catch(e) { console.error(e); }
+        }
+      } else if (textInput && textInput.value.trim() !== "") {
+        textsToProcess.push(textInput.value.trim());
+      }
 
-          if (i < totalFiles - 1) {
-            let countdown = 10; 
-            while (countdown > 0) {
-              if (isCancelled) break;
-              btnSubmit.innerText = `[${i+1}/${totalFiles}] Cool-down: Waiting ${countdown}s...`;
-              await sleep(1000);
-              countdown--;
-            }
-          }
-        }
-
-        if (btnStop) {
-          btnStop.classList.add('hidden');
-          btnStop.classList.remove('flex');
-        }
-        btnSubmit.disabled = false;
-        btnSubmit.classList.remove('opacity-90');
-        btnSubmit.innerText = "Extract & Download Excel (.xls)";
-        
-        if (collectedData.length > 0) {
-          downloadExcel(collectedData);
-          showStatus(isCancelled ? "Process stopped. Partial file downloaded." : `🎉 Success! Downloaded ${collectedData.length} journal entries as Excel.`, "success");
-        }
-        
-        fileInput.value = "";
+      if (textsToProcess.length === 0) {
+        showStatus("⚠️ Please upload at least one PDF or paste journal text.", "error");
         return;
       }
 
-      if (manualText && manualText.trim() !== "") {
-        btnSubmit.disabled = true;
-        btnSubmit.innerText = "Processing via AI...";
-        try {
-          const aiResult = await fetchViaGASProxy(manualText, apiKey, targetLanguage);
-          collectedData.push({
-              title: cleanOutput(aiResult.title, fallbackText),
-              author: cleanOutput(aiResult.author, fallbackText),
-              year: cleanOutput(aiResult.year, fallbackText),
-              method: cleanOutput(aiResult.method, fallbackText),
-              findings: cleanOutput(aiResult.findings, fallbackText),
-              gap: cleanOutput(aiResult.gap, fallbackText)
+      btn.disabled = true;
+      btn.innerText = "Extracting via AI...";
+      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
+
+      try {
+        for (let text of textsToProcess) {
+          const res = await callGasProxy({
+            action: "extract",
+            apiKey: apiKey,
+            targetLanguage: targetLanguage,
+            journalText: text
           });
-          downloadExcel(collectedData);
-          btnSubmit.disabled = false;
-          btnSubmit.innerText = "Extract & Download Excel (.xls)";
-          showStatus("🎉 Success! Excel file downloaded.", "success");
-          if (journalTextEl) journalTextEl.value = "";
-        } catch (err) {
-          btnSubmit.disabled = false;
-          btnSubmit.innerText = "Extract & Download Excel (.xls)";
-          showStatus(getFriendlyErrorMessage(err.message), "error");
+          window.appCollectedData.push({
+            title: cleanOutput(res.title, fallbackText),
+            author: cleanOutput(res.author, fallbackText),
+            year: cleanOutput(res.year, fallbackText),
+            method: cleanOutput(res.method, fallbackText),
+            findings: cleanOutput(res.findings, fallbackText),
+            gap: cleanOutput(res.gap, fallbackText)
+          });
         }
-        return;
+        renderTable();
+        showStatus(`🎉 Successfully added ${textsToProcess.length} paper(s) to workspace memory!`, "success");
+        fileInput.value = "";
+        textInput.value = "";
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Extract & Add to Workspace (.xls)";
       }
+    }
 
-      showStatus("⚠️ Please upload at least one PDF or paste journal text!", "error");
+    async function handleAutoSynthesis() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const targetLanguage = document.getElementById('targetLanguage').value;
+      const btn = document.getElementById('btnSynthesis');
+
+      if (!apiKey) { showStatus("⚠️ Please enter your Groq API Key.", "error"); return; }
+      if (window.appCollectedData.length === 0) { showStatus("⚠️ Workspace memory is empty! Extract papers in Matrix Generator first.", "error"); return; }
+
+      btn.disabled = true;
+      btn.innerText = "Synthesizing Chapter 2...";
+      hideStatus();
+
+      try {
+        const res = await callGasProxy({
+          action: "synthesis",
+          apiKey: apiKey,
+          targetLanguage: targetLanguage,
+          papersJson: JSON.stringify(window.appCollectedData)
+        });
+        document.getElementById('synthesisContent').innerText = res.synthesisText || "No synthesis generated.";
+        document.getElementById('synthesisResultBox').classList.remove('hidden');
+        showStatus("🎉 Academic Chapter 2 synthesis generated successfully!", "success");
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "✨ Generate Chapter 2 Synthesis";
+      }
+    }
+
+    async function handleGapFinder() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const targetLanguage = document.getElementById('targetLanguage').value;
+      const btn = document.getElementById('btnGap');
+
+      if (!apiKey) { showStatus("⚠️ Please enter your Groq API Key.", "error"); return; }
+      if (window.appCollectedData.length === 0) { showStatus("⚠️ Workspace memory is empty! Extract papers in Matrix Generator first.", "error"); return; }
+
+      btn.disabled = true;
+      btn.innerText = "Analyzing Gaps & Novelty...";
+      hideStatus();
+
+      try {
+        const res = await callGasProxy({
+          action: "gap",
+          apiKey: apiKey,
+          targetLanguage: targetLanguage,
+          papersJson: JSON.stringify(window.appCollectedData)
+        });
+        document.getElementById('gapOverviewContent').innerText = res.gapOverview || "No overview available.";
+        document.getElementById('gapRecsContent').innerText = res.recommendations || "No recommendations available.";
+        document.getElementById('gapResultBox').classList.remove('hidden');
+        showStatus("🎉 Research gap and novelty analysis completed!", "success");
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "💡 Analyze Gaps & Novelty Ideas";
+      }
+    }
+
+    function copySynthesis() {
+      const text = document.getElementById('synthesisContent').innerText;
+      navigator.clipboard.writeText(text);
+      alert("Synthesis text copied to clipboard!");
     }
 
     function extractTextFromPdf(file) {
@@ -356,16 +415,12 @@
             let fullText = "";
             const pagesToRead = Math.min(pdf.numPages, 2);
             let count = 0;
-            
             for (let i = 1; i <= pagesToRead; i++) {
               pdf.getPage(i).then(function(page) {
                 page.getTextContent().then(function(textContent) {
-                  const pageText = textContent.items.map(item => item.str).join(" ");
-                  fullText += pageText + "\n";
+                  fullText += textContent.items.map(item => item.str).join(" ") + "\n";
                   count++;
-                  if (count === pagesToRead) {
-                    resolve(fullText);
-                  }
+                  if (count === pagesToRead) resolve(fullText);
                 });
               });
             }
@@ -375,17 +430,15 @@
       });
     }
 
-    function showStatus(htmlMsg, type) {
-      const statusBox = document.getElementById('statusBox');
-      if (statusBox) {
-        statusBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200');
-        statusBox.innerHTML = htmlMsg;
-        if (type === "success") {
-          statusBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
-        } else {
-          statusBox.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
-        }
-      }
+    function showStatus(msg, type) {
+      const box = document.getElementById('statusBox');
+      box.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200');
+      box.innerText = msg;
+      box.classList.add(type === "success" ? 'bg-emerald-50' : 'bg-red-50', type === "success" ? 'text-emerald-800' : 'text-red-800');
+    }
+
+    function hideStatus() {
+      document.getElementById('statusBox').classList.add('hidden');
     }
   </script>
 </body>
