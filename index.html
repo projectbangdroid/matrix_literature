@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.9 (Guest)</p>
+          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.10 (Guest)</p>
         </div>
       </div>
 
@@ -54,7 +54,7 @@
       </nav>
     </div>
 
-    <!-- Sidebar Footer / Auth Widget & Memory -->
+    <!-- Sidebar Footer / Auth Widget & Memory Manager Trigger -->
     <div class="pt-6 border-t border-slate-800 text-sm space-y-3 mt-6">
       <div id="authWidget" class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700/50 space-y-2">
         <div class="flex items-center justify-between">
@@ -66,10 +66,15 @@
         </div>
       </div>
 
-      <div class="bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50">
-        <p class="text-slate-400 font-medium">Workspace Memory:</p>
+      <!-- Interactive Memory Manager Trigger -->
+      <div onclick="openMemoryModal()" class="bg-slate-800/70 p-3.5 rounded-xl border border-slate-700/50 hover:border-slate-600 cursor-pointer transition group">
+        <div class="flex justify-between items-center">
+          <p class="text-slate-400 font-medium group-hover:text-slate-300">Workspace Memory</p>
+          <span class="text-[11px] text-indigo-400 group-hover:underline">Kelola ⚙️</span>
+        </div>
         <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Papers Stored</p>
       </div>
+
       <p class="text-xs text-slate-500 text-center">© 2026 Academic Workspace</p>
     </div>
   </aside>
@@ -175,7 +180,7 @@
       <section id="view-synthesis" class="hidden space-y-6">
         <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
           <h3 class="font-bold text-slate-900 text-lg">Chapter 2 Narrative Synthesis Generator</h3>
-          <p class="text-sm text-slate-500">Synthesize all papers currently stored in your workspace memory into a professional academic literature review prose.</p>
+          <p class="text-sm text-slate-500">Synthesize all checked papers currently stored in your workspace memory into a professional academic literature review prose.</p>
           
           <button type="button" onclick="handleAutoSynthesis()" id="btnSynthesis" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl text-sm transition shadow-sm cursor-pointer">
             ✨ Generate Chapter 2 Synthesis
@@ -299,6 +304,41 @@
     </div>
   </main>
 
+  <!-- WORKSPACE MEMORY MANAGER MODAL -->
+  <div id="memoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 space-y-5 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+        <div>
+          <h3 class="font-bold text-slate-900 text-lg">📁 Workspace Memory Manager</h3>
+          <p class="text-xs text-slate-500">Select, manage, or clear papers stored in your active session.</p>
+        </div>
+        <button onclick="closeMemoryModal()" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+      </div>
+      
+      <!-- Toolbar: Select All, Delete Selected, Clear All -->
+      <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+        <div class="flex items-center gap-2">
+          <button onclick="toggleSelectAllMemory(true)" class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition cursor-pointer">Pilih Semua</button>
+          <button onclick="toggleSelectAllMemory(false)" class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition cursor-pointer">Batalkan Pilihan</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="deleteSelectedMemory()" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold rounded-lg transition cursor-pointer">Hapus Pilihan</button>
+          <button onclick="clearAllMemory()" class="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition cursor-pointer shadow-xs">Clear All (Reset)</button>
+        </div>
+      </div>
+
+      <!-- List of Papers with Checkboxes -->
+      <div id="memoryListContainer" class="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[45vh]">
+        <div class="p-6 text-center text-slate-400 text-sm bg-slate-50 rounded-xl border border-slate-200">No papers stored in workspace memory yet.</div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-3 flex justify-between items-center">
+        <span id="memoryModalCount" class="text-xs font-semibold text-slate-500">0 papers selected / 0 total</span>
+        <button onclick="closeMemoryModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition cursor-pointer shadow-xs">Selesai</button>
+      </div>
+    </div>
+  </div>
+
   <!-- LOGIN MODAL DIALOG -->
   <div id="loginModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
     <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 space-y-4 relative">
@@ -360,6 +400,99 @@
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+    // --- MEMORY MANAGER FUNCTIONS ---
+    function openMemoryModal() {
+      renderMemoryModalList();
+      document.getElementById('memoryModal').classList.remove('hidden');
+    }
+    function closeMemoryModal() {
+      document.getElementById('memoryModal').classList.add('hidden');
+      renderTable(); // Update table preview if needed
+    }
+
+    function renderMemoryModalList() {
+      const container = document.getElementById('memoryListContainer');
+      const countEl = document.getElementById('memoryModalCount');
+      const total = window.appCollectedData.length;
+      
+      if (total === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-slate-400 text-sm bg-slate-50 rounded-xl border border-slate-200">No papers stored in workspace memory yet.</div>';
+        countEl.innerText = `0 papers selected / 0 total`;
+        return;
+      }
+
+      let selectedCount = 0;
+      let html = '';
+      window.appCollectedData.forEach((item, index) => {
+        if (item.selected !== false) selectedCount++;
+        const isChecked = item.selected !== false ? 'checked' : '';
+        html += `
+          <div class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 flex items-start gap-3 transition hover:bg-slate-100/60">
+            <input type="checkbox" ${isChecked} onchange="toggleMemoryItem(${index}, this.checked)" class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+            <div class="flex-1 min-w-0">
+              <h5 class="font-bold text-slate-900 text-xs truncate">${escapeHtml(item.title)}</h5>
+              <p class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(item.author)} (${escapeHtml(item.year)})</p>
+            </div>
+            <button type="button" onclick="deleteOneMemoryItem(${index})" class="text-slate-400 hover:text-red-600 p-1 rounded transition cursor-pointer" title="Hapus Jurnal">
+              🗑️
+            </button>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      countEl.innerText = `${selectedCount} papers selected / ${total} total`;
+    }
+
+    function toggleMemoryItem(index, isChecked) {
+      if (window.appCollectedData[index]) {
+        window.appCollectedData[index].selected = isChecked;
+      }
+      renderMemoryModalList();
+      updateMemoryBadge();
+    }
+
+    function toggleSelectAllMemory(selectStatus) {
+      window.appCollectedData.forEach(item => {
+        item.selected = selectStatus;
+      });
+      renderMemoryModalList();
+      updateMemoryBadge();
+    }
+
+    function deleteOneMemoryItem(index) {
+      if (confirm("Hapus jurnal ini dari memori workspace?")) {
+        window.appCollectedData.splice(index, 1);
+        renderMemoryModalList();
+        renderTable();
+        updateMemoryBadge();
+      }
+    }
+
+    function deleteSelectedMemory() {
+      const initialLen = window.appCollectedData.length;
+      window.appCollectedData = window.appCollectedData.filter(item => item.selected === false);
+      renderMemoryModalList();
+      renderTable();
+      updateMemoryBadge();
+      alert(`Berhasil menghapus jurnal yang dipilih.`);
+    }
+
+    function clearAllMemory() {
+      if (confirm("⚠️ Apakah Anda yakin ingin mengosongkan SELURUH memory workspace? Semua jurnal yang tersimpan akan terhapus.")) {
+        window.appCollectedData = [];
+        renderMemoryModalList();
+        renderTable();
+        updateMemoryBadge();
+        alert("Workspace memory berhasil dikosongkan.");
+      }
+    }
+
+    function getActiveWorkspacePapers() {
+      const active = window.appCollectedData.filter(item => item.selected !== false);
+      return active.length > 0 ? active : window.appCollectedData;
+    }
+    // ---------------------------------
+
     function openLoginModal() {
       document.getElementById('loginModal').classList.remove('hidden');
     }
@@ -395,7 +528,7 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.9 (Unlocked)";
+          document.getElementById('appVersionText').innerText = "AI Research Suite v2.10 (Unlocked)";
           document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
           
           document.getElementById('authWidget').innerHTML = `
@@ -421,7 +554,7 @@
     function handleLogout() {
       globalEmail = "";
       isUserUnlocked = false;
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.9 (Guest)";
+      document.getElementById('appVersionText').innerText = "AI Research Suite v2.10 (Guest)";
       document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
       document.getElementById('authWidget').innerHTML = `
         <div class="flex items-center justify-between">
@@ -562,10 +695,13 @@
     }
 
     function updateMemoryBadge() {
-      const count = window.appCollectedData.length;
-      document.getElementById('memoryBadge').innerText = `${count} Paper${count === 1 ? '' : 's'} Stored`;
-      if (count > 0) {
+      const total = window.appCollectedData.length;
+      const activeCount = window.appCollectedData.filter(item => item.selected !== false).length;
+      document.getElementById('memoryBadge').innerText = `${activeCount}/${total} Active Papers`;
+      if (total > 0) {
         document.getElementById('btnDownload').classList.remove('hidden');
+      } else {
+        document.getElementById('btnDownload').classList.add('hidden');
       }
     }
 
@@ -605,7 +741,8 @@
       }
       let html = '';
       window.appCollectedData.forEach(row => {
-        html += `<tr class="hover:bg-slate-50/80 transition">
+        const opacityClass = row.selected === false ? 'opacity-40 bg-slate-50' : '';
+        html += `<tr class="hover:bg-slate-50/80 transition ${opacityClass}">
           <td class="p-3 font-medium text-slate-900">${escapeHtml(row.title)}</td>
           <td class="p-3 text-slate-700">${escapeHtml(row.author)}</td>
           <td class="p-3 text-slate-700">${escapeHtml(row.year)}</td>
@@ -695,7 +832,8 @@
         year: String(year),
         method: 'Crossref API (Metadata-based)',
         findings: abstract.substring(0, 300) + '...',
-        gap: 'Retrieved via direct search'
+        gap: 'Retrieved via direct search',
+        selected: true
       });
       renderTable();
       alert(`Successfully added "${title}" to workspace memory!`);
@@ -707,8 +845,9 @@
       const query = document.getElementById('chatInput').value.trim();
       const chatBox = document.getElementById('chatMessages');
 
+      const activePapers = getActiveWorkspacePapers();
       if (!apiKey) { alert('Please enter your Groq API Key in the top bar.'); return; }
-      if (window.appCollectedData.length === 0) { alert('Workspace memory is empty! Extract or add papers first.'); return; }
+      if (activePapers.length === 0) { alert('No active papers selected in workspace memory! Check at least one paper.'); return; }
       if (!query) return;
 
       chatBox.innerHTML += `<div class="p-3 bg-indigo-50 text-indigo-900 rounded-xl text-sm ml-auto max-w-xl shadow-xs"><strong>You:</strong> ${escapeHtml(query)}</div>`;
@@ -716,7 +855,7 @@
       chatBox.scrollTop = chatBox.scrollHeight;
 
       const loadingId = 'loading-' + Date.now();
-      chatBox.innerHTML += `<div id="${loadingId}" class="p-3 bg-slate-100 text-slate-600 rounded-xl text-sm mr-auto max-w-xl animate-pulse">AI is analyzing workspace papers...</div>`;
+      chatBox.innerHTML += `<div id="${loadingId}" class="p-3 bg-slate-100 text-slate-600 rounded-xl text-sm mr-auto max-w-xl animate-pulse">AI is analyzing active workspace papers...</div>`;
       chatBox.scrollTop = chatBox.scrollHeight;
 
       try {
@@ -724,7 +863,7 @@
           action: "chat",
           apiKey: apiKey,
           targetLanguage: targetLanguage,
-          papersJson: JSON.stringify(window.appCollectedData),
+          papersJson: JSON.stringify(activePapers),
           userQuery: query
         });
         document.getElementById(loadingId).remove();
@@ -792,7 +931,8 @@
                 year: cleanOutput(res.year, fallbackText),
                 method: cleanOutput(res.method, fallbackText),
                 findings: cleanOutput(res.findings, fallbackText),
-                gap: cleanOutput(res.gap, fallbackText)
+                gap: cleanOutput(res.gap, fallbackText),
+                selected: true
               });
               successCount++;
               renderTable();
@@ -831,7 +971,8 @@
             year: cleanOutput(res.year, fallbackText),
             method: cleanOutput(res.method, fallbackText),
             findings: cleanOutput(res.findings, fallbackText),
-            gap: cleanOutput(res.gap, fallbackText)
+            gap: cleanOutput(res.gap, fallbackText),
+            selected: true
           });
           successCount++;
           renderTable();
@@ -856,9 +997,10 @@
       const apiKey = document.getElementById('apiKey').value.trim();
       const targetLanguage = document.getElementById('targetLanguage').value;
       const btn = document.getElementById('btnSynthesis');
+      const activePapers = getActiveWorkspacePapers();
 
       if (!apiKey) { alert('Please enter your Groq API Key.'); return; }
-      if (window.appCollectedData.length === 0) { alert('Workspace memory is empty! Extract papers in Matrix Generator first.'); return; }
+      if (activePapers.length === 0) { alert('No active papers selected in workspace memory! Check at least one paper.'); return; }
 
       btn.disabled = true;
       btn.innerText = "Synthesizing Chapter 2...";
@@ -869,7 +1011,7 @@
           action: "synthesis",
           apiKey: apiKey,
           targetLanguage: targetLanguage,
-          papersJson: JSON.stringify(window.appCollectedData)
+          papersJson: JSON.stringify(activePapers)
         });
         document.getElementById('synthesisContent').innerText = res.synthesisText || "No synthesis generated.";
         document.getElementById('synthesisResultBox').classList.remove('hidden');
@@ -887,9 +1029,10 @@
       const targetLanguage = document.getElementById('targetLanguage').value;
       const methodologyFilter = document.getElementById('methodologyFilter').value;
       const btn = document.getElementById('btnGap');
+      const activePapers = getActiveWorkspacePapers();
 
       if (!apiKey) { alert('Please enter your Groq API Key.'); return; }
-      if (window.appCollectedData.length === 0) { alert('Workspace memory is empty! Extract papers in Matrix Generator first.'); return; }
+      if (activePapers.length === 0) { alert('No active papers selected in workspace memory! Check at least one paper.'); return; }
 
       btn.disabled = true;
       btn.innerText = "Analyzing Gaps & Titles...";
@@ -901,7 +1044,7 @@
           apiKey: apiKey,
           targetLanguage: targetLanguage,
           methodologyFilter: methodologyFilter,
-          papersJson: JSON.stringify(window.appCollectedData)
+          papersJson: JSON.stringify(activePapers)
         });
         
         document.getElementById('gapOverviewContent').innerText = formatAiOutput(res.gapOverview);
@@ -964,15 +1107,16 @@
 
     function renderReferences() {
       const container = document.getElementById('referencesListContent');
-      if (window.appCollectedData.length === 0) {
-        container.innerHTML = '<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">No papers stored in workspace memory yet. Extract papers in Matrix Generator first.</div>';
+      const activePapers = getActiveWorkspacePapers();
+      if (activePapers.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">No active papers selected in workspace memory.</div>';
         return;
       }
 
       const style = document.getElementById('citationStyle').value;
       let html = '';
 
-      const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
+      const sorted = [...activePapers].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
 
       sorted.forEach((item, index) => {
         let citation = '';
@@ -1000,7 +1144,8 @@
     }
 
     function copySingleRef(index, style) {
-      const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
+      const activePapers = getActiveWorkspacePapers();
+      const sorted = [...activePapers].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
       const item = sorted[index];
       const formattedAuthor = formatAuthors(item.author, style);
       const year = item.year || "n.d.";
@@ -1016,9 +1161,10 @@
     }
 
     function copyAllReferences() {
-      if (window.appCollectedData.length === 0) return;
+      const activePapers = getActiveWorkspacePapers();
+      if (activePapers.length === 0) return;
       const style = document.getElementById('citationStyle').value;
-      const sorted = [...window.appCollectedData].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
+      const sorted = [...activePapers].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
       
       let allText = '';
       sorted.forEach((item, index) => {
@@ -1035,9 +1181,10 @@
     }
 
     function exportBibTeX() {
-      if (window.appCollectedData.length === 0) return;
+      const activePapers = getActiveWorkspacePapers();
+      if (activePapers.length === 0) return;
       let bib = '';
-      window.appCollectedData.forEach((item, index) => {
+      activePapers.forEach((item, index) => {
         const firstAuthorName = (item.author || 'author').split(',')[0].split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
         const citeKey = `${firstAuthorName}${item.year || '2026'}`;
         bib += `@article{${citeKey},\n`;
