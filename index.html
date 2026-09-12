@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.14 (Guest)</p>
+          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.15 (Guest)</p>
         </div>
       </div>
 
@@ -72,7 +72,10 @@
           <p class="text-slate-400 font-medium group-hover:text-slate-300">Workspace Memory</p>
           <span class="text-[11px] text-indigo-400 group-hover:underline">Manage ⚙️</span>
         </div>
-        <p id="memoryBadge" class="text-emerald-400 font-bold mt-0.5 text-sm">0 Active Papers</p>
+        <div class="flex justify-between items-center mt-0.5">
+          <p id="memoryBadge" class="text-emerald-400 font-bold text-sm">0 Active Papers</p>
+          <span id="workspaceSyncStatus" class="text-[10px] text-slate-500"></span>
+        </div>
       </div>
 
       <!-- Contact Me Trigger -->
@@ -348,10 +351,12 @@
           <button onclick="toggleSelectAllMemory(false)" class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition cursor-pointer">Deselect All</button>
         </div>
         <div class="flex items-center gap-2">
+          <button onclick="loadWorkspaceFromServer(true)" id="btnReloadCloud" class="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition cursor-pointer">🔄 Reload from Cloud</button>
           <button onclick="deleteSelectedMemory()" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-semibold rounded-lg transition cursor-pointer">Delete Selected</button>
           <button onclick="clearAllMemory()" class="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition cursor-pointer shadow-xs">Clear All (Reset)</button>
         </div>
       </div>
+      <p id="memoryModalSyncNote" class="text-[11px] text-slate-400 -mt-2"></p>
 
       <!-- List of Papers -->
       <div id="memoryListContainer" class="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[45vh]">
@@ -454,12 +459,20 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbxWf3-1KIWVJFv_Mnj0EuGVo4nFaCf8Dx9pUvmsIJmFZr6LFEqeqoxmDMselhVjUdM2CA/exec";
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSyncIndicator();
+    });
+
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbwbtbR-2ujea4r-5RpMz9QchbJoY6sOg1oEFpUvnct6raS_-zsaSWgme9rm1n2XNkrd/exec";
     
     let globalEmail = "";
     let isUserUnlocked = false;
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    // --- CLOUD WORKSPACE SYNC STATE ---
+    let workspaceSyncTimer = null;
+    let workspaceSyncStatus = "idle"; // idle | pending | saving | saved | error
 
     // --- SEARCH PAGINATION VARIABLES ---
     let currentSearchOffset = 0;
@@ -527,6 +540,7 @@
       }
       renderMemoryModalList();
       updateMemoryBadge();
+      scheduleWorkspaceSave();
     }
 
     function toggleSelectAllMemory(selectStatus) {
@@ -535,6 +549,7 @@
       });
       renderMemoryModalList();
       updateMemoryBadge();
+      scheduleWorkspaceSave();
     }
 
     function deleteOneMemoryItem(index) {
@@ -543,6 +558,7 @@
         renderMemoryModalList();
         renderTable();
         updateMemoryBadge();
+        scheduleWorkspaceSave();
       }
     }
 
@@ -551,6 +567,7 @@
       renderMemoryModalList();
       renderTable();
       updateMemoryBadge();
+      scheduleWorkspaceSave();
       alert(`Successfully deleted selected papers.`);
     }
 
@@ -560,6 +577,7 @@
         renderMemoryModalList();
         renderTable();
         updateMemoryBadge();
+        scheduleWorkspaceSave();
         alert("Workspace memory successfully cleared.");
       }
     }
@@ -567,6 +585,83 @@
     function getActiveWorkspacePapers() {
       const active = window.appCollectedData.filter(item => item.selected !== false);
       return active.length > 0 ? active : window.appCollectedData;
+    }
+    // ---------------------------------
+
+    // --- CLOUD WORKSPACE SYNC FUNCTIONS ---
+    function updateSyncIndicator() {
+      const el = document.getElementById('workspaceSyncStatus');
+      const modalNote = document.getElementById('memoryModalSyncNote');
+      if (!el) return;
+
+      if (!isUserUnlocked) {
+        el.innerText = '';
+        if (modalNote) modalNote.innerText = 'Login to sync your workspace across devices.';
+        return;
+      }
+
+      const map = {
+        idle: '☁️ Synced',
+        pending: '⏳ Pending sync...',
+        saving: '⏳ Saving...',
+        saved: '☁️ Synced',
+        error: '⚠️ Sync failed'
+      };
+      el.innerText = map[workspaceSyncStatus] || '';
+      if (modalNote) {
+        modalNote.innerText = workspaceSyncStatus === 'error'
+          ? 'Last cloud save failed. Your changes are still here locally — try "Reload from Cloud" or re-edit to retry.'
+          : `Workspace auto-syncs to the cloud for ${escapeHtml(globalEmail)}.`;
+      }
+    }
+
+    function scheduleWorkspaceSave() {
+      if (!isUserUnlocked || !globalEmail) return;
+      workspaceSyncStatus = 'pending';
+      updateSyncIndicator();
+      if (workspaceSyncTimer) clearTimeout(workspaceSyncTimer);
+      workspaceSyncTimer = setTimeout(saveWorkspaceToServer, 1500);
+    }
+
+    async function saveWorkspaceToServer() {
+      if (!isUserUnlocked || !globalEmail) return;
+      workspaceSyncStatus = 'saving';
+      updateSyncIndicator();
+      try {
+        await callGasProxy({
+          action: 'save_workspace',
+          workspaceJson: JSON.stringify(window.appCollectedData)
+        });
+        workspaceSyncStatus = 'saved';
+      } catch (err) {
+        console.error('Workspace cloud save failed:', err.message);
+        workspaceSyncStatus = 'error';
+      }
+      updateSyncIndicator();
+    }
+
+    async function loadWorkspaceFromServer(showAlert = false) {
+      if (!isUserUnlocked || !globalEmail) return;
+      try {
+        const data = await callGasProxy({ action: 'load_workspace' });
+        const remote = (data && Array.isArray(data.workspace)) ? data.workspace : [];
+        if (remote.length > 0) {
+          window.appCollectedData = remote;
+        }
+        renderTable();
+        renderMemoryModalList();
+        updateMemoryBadge();
+        workspaceSyncStatus = 'saved';
+        updateSyncIndicator();
+        if (showAlert) {
+          alert(remote.length > 0
+            ? `☁️ Workspace loaded from cloud: ${remote.length} paper(s).`
+            : `☁️ No papers found in your cloud workspace yet.`);
+        }
+      } catch (err) {
+        console.error('Workspace cloud load failed:', err.message);
+        if (showAlert) alert('Failed to load cloud workspace: ' + err.message);
+      }
     }
     // ---------------------------------
 
@@ -605,7 +700,7 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.14 (Unlocked)";
+          document.getElementById('appVersionText').innerText = "AI Research Suite v2.15 (Unlocked)";
           document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
           
           document.getElementById('authWidget').innerHTML = `
@@ -615,6 +710,8 @@
             </div>
           `;
           closeLoginModal();
+          updateSyncIndicator();
+          await loadWorkspaceFromServer(false);
           alert("🎉 Login successful! All features are now unlocked.");
         } else {
           throw new Error("Email not found in the whitelist sheet.");
@@ -628,10 +725,18 @@
       }
     }
 
-    function handleLogout() {
+    async function handleLogout() {
+      // Flush any pending changes to the cloud before clearing local state
+      if (workspaceSyncTimer) clearTimeout(workspaceSyncTimer);
+      if (isUserUnlocked && globalEmail) {
+        try { await saveWorkspaceToServer(); } catch (e) { /* best-effort */ }
+      }
+
       globalEmail = "";
       isUserUnlocked = false;
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.14 (Guest)";
+      workspaceSyncStatus = "idle";
+      window.appCollectedData = []; // clear local workspace so the next user on this device starts clean
+      document.getElementById('appVersionText').innerText = "AI Research Suite v2.15 (Guest)";
       document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
       document.getElementById('authWidget').innerHTML = `
         <div class="flex items-center justify-between">
@@ -642,8 +747,11 @@
           </div>
         </div>
       `;
+      renderTable();
+      updateMemoryBadge();
+      updateSyncIndicator();
       switchTab('matrix');
-      alert("You have logged out.");
+      alert("You have logged out. Your workspace was saved to the cloud and cleared from this device.");
     }
 
     function openRegisterModal() {
@@ -945,6 +1053,7 @@
         selected: true
       });
       renderTable();
+      scheduleWorkspaceSave();
       alert(`Successfully added "${title}" to workspace memory!`);
     }
 
@@ -1002,6 +1111,7 @@
       if (successCount > 0) {
         document.getElementById('doiInput').value = "";
         showStatus(`🎉 Successfully imported ${successCount}/${doiList.length} paper(s) via DOI.`, "success");
+        scheduleWorkspaceSave();
       } else {
         showStatus("❌ Failed to import any DOI. Check the DOI format and try again.", "error");
       }
@@ -1150,6 +1260,7 @@
           showStatus(`🎉 Successfully extracted and added ${successCount} paper(s) to workspace memory!`, "success");
           fileInput.value = "";
           textInput.value = "";
+          scheduleWorkspaceSave();
         } else {
           showStatus("⚠️ No papers were successfully processed.", "error");
         }
