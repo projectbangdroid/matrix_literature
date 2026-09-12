@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.16 (Guest)</p>
+          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.17 (Guest)</p>
         </div>
       </div>
 
@@ -659,6 +659,28 @@
       );
     }
     // ---------------------------------
+
+    // --- AI ENRICHMENT FOR METADATA-ONLY IMPORTS (DOI / Direct Search) ---
+    // Crossref only gives raw metadata (title/author/year/abstract) - no AI reasoning.
+    // If the user has a Groq API key set, we run it through the same "extract" analysis
+    // used for PDF/text uploads so Methodology/Findings/Gap are real, not placeholders.
+    async function analyzeAbstractWithAI(apiKey, targetLanguage, title, abstractText) {
+      if (!apiKey) return null;
+      if (!abstractText || abstractText === 'No abstract available.') return null;
+      try {
+        const res = await callGasProxy({
+          action: "extract",
+          apiKey: apiKey,
+          targetLanguage: targetLanguage,
+          journalText: `Title: ${title}\n\nAbstract: ${abstractText}`
+        });
+        return res;
+      } catch (err) {
+        console.error('AI abstract analysis failed:', err.message);
+        return null;
+      }
+    }
+    // ---------------------------------
     function updateSyncIndicator() {
       const el = document.getElementById('workspaceSyncStatus');
       const modalNote = document.getElementById('memoryModalSyncNote');
@@ -770,7 +792,7 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.16 (Unlocked)";
+          document.getElementById('appVersionText').innerText = "AI Research Suite v2.17 (Unlocked)";
           document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
           
           document.getElementById('authWidget').innerHTML = `
@@ -806,7 +828,7 @@
       isUserUnlocked = false;
       workspaceSyncStatus = "idle";
       window.appCollectedData = []; // clear local workspace so the next user on this device starts clean
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.16 (Guest)";
+      document.getElementById('appVersionText').innerText = "AI Research Suite v2.17 (Guest)";
       document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
       document.getElementById('authWidget').innerHTML = `
         <div class="flex items-center justify-between">
@@ -1113,20 +1135,38 @@
       }
     }
 
-    function addPaperToWorkspace(title, authors, year, abstract) {
+    async function addPaperToWorkspace(title, authors, year, abstract) {
       if (!checkAndConfirmDuplicate(title, null)) return;
+
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const targetLanguage = document.getElementById('targetLanguage').value;
+      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
+
+      let method = 'Crossref API (Metadata-based)';
+      let findings = abstract.substring(0, 300) + (abstract.length > 300 ? '...' : '');
+      let gap = (targetLanguage === "English")
+        ? 'Not analyzed — add your Groq API key in the top bar to auto-generate the research gap.'
+        : 'Belum dianalisis — masukkan Groq API Key di bagian atas untuk menghasilkan research gap otomatis.';
+
+      const aiResult = await analyzeAbstractWithAI(apiKey, targetLanguage, title, abstract);
+      if (aiResult) {
+        method = cleanOutput(aiResult.method, fallbackText);
+        findings = cleanOutput(aiResult.findings, fallbackText);
+        gap = cleanOutput(aiResult.gap, fallbackText);
+      }
+
       window.appCollectedData.push({
         title: title,
         author: authors,
         year: String(year),
-        method: 'Crossref API (Metadata-based)',
-        findings: abstract.substring(0, 300) + '...',
-        gap: 'Retrieved via direct search',
+        method: method,
+        findings: findings,
+        gap: gap,
         selected: true
       });
       renderTable();
       scheduleWorkspaceSave();
-      alert(`Successfully added "${title}" to workspace memory!`);
+      alert(`Successfully added "${title}" to workspace memory!` + (aiResult ? '' : (apiKey ? ' (No abstract available to analyze.)' : ' Tip: add your Groq API key to also auto-generate the research gap.')));
     }
 
     // --- IMPORT BY DOI ---
@@ -1149,6 +1189,10 @@
       let skippedDupCount = 0;
       hideStatus();
 
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const targetLanguage = document.getElementById('targetLanguage').value;
+      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
+
       for (let i = 0; i < doiList.length; i++) {
         btn.innerText = `[${i + 1}/${doiList.length}] Fetching metadata...`;
         try {
@@ -1166,13 +1210,29 @@
             continue;
           }
 
+          let method = 'DOI Import (Crossref metadata only)';
+          let findings = (p.abstract || 'No abstract available.').substring(0, 300);
+          let gap = (targetLanguage === "English")
+            ? 'Not analyzed — add your Groq API key in the top bar to auto-generate the research gap.'
+            : 'Belum dianalisis — masukkan Groq API Key di bagian atas untuk menghasilkan research gap otomatis.';
+
+          if (apiKey && p.abstract && p.abstract !== 'No abstract available.') {
+            btn.innerText = `[${i + 1}/${doiList.length}] Analyzing via AI...`;
+            const aiResult = await analyzeAbstractWithAI(apiKey, targetLanguage, p.title, p.abstract);
+            if (aiResult) {
+              method = cleanOutput(aiResult.method, fallbackText);
+              findings = cleanOutput(aiResult.findings, fallbackText);
+              gap = cleanOutput(aiResult.gap, fallbackText);
+            }
+          }
+
           window.appCollectedData.push({
             title: p.title || 'Untitled',
             author: p.authors || 'Unknown Author',
             year: String(p.year || 'n.d.'),
-            method: 'DOI Import (Crossref)',
-            findings: (p.abstract || 'No abstract available.').substring(0, 300),
-            gap: 'Imported via DOI',
+            method: method,
+            findings: findings,
+            gap: gap,
             doi: p.doi || doiList[i],
             selected: true
           });
@@ -1181,7 +1241,7 @@
         } catch (err) {
           console.error(`DOI ${doiList[i]} failed:`, err.message);
         }
-        if (i < doiList.length - 1) await sleep(600); // gentle pacing for Crossref
+        if (i < doiList.length - 1) await sleep(apiKey ? 1200 : 600); // gentle pacing for Crossref/Groq
       }
 
       btn.disabled = false;
@@ -1190,7 +1250,8 @@
       if (successCount > 0) {
         document.getElementById('doiInput').value = "";
         const dupNote = skippedDupCount > 0 ? ` (${skippedDupCount} skipped as duplicate)` : '';
-        showStatus(`🎉 Successfully imported ${successCount}/${doiList.length} paper(s) via DOI${dupNote}.`, "success");
+        const tipNote = !apiKey ? ' 💡 Tip: add your Groq API key to also auto-generate the research gap.' : '';
+        showStatus(`🎉 Successfully imported ${successCount}/${doiList.length} paper(s) via DOI${dupNote}.${tipNote}`, "success");
         scheduleWorkspaceSave();
       } else if (skippedDupCount > 0) {
         showStatus(`ℹ️ No new papers imported — ${skippedDupCount} were skipped as duplicates.`, "error");
