@@ -23,7 +23,7 @@
         <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">🎓</div>
         <div>
           <h1 class="font-bold text-white text-base tracking-wide">Academic Workspace</h1>
-          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.13 (Guest)</p>
+          <p id="appVersionText" class="text-xs text-slate-400">AI Research Suite v2.14 (Guest)</p>
         </div>
       </div>
 
@@ -131,6 +131,16 @@
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 2: Paste Single Journal Abstract / Text</label>
             <textarea id="journalText" rows="3" placeholder="Paste journal text or abstract here..." class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition resize-none bg-slate-50/50"></textarea>
+          </div>
+
+          <div class="text-center text-xs font-bold text-slate-400 my-2">— OR —</div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Option 3: Import by DOI (multiple, one per line or comma-separated)</label>
+            <textarea id="doiInput" rows="2" placeholder="e.g. 10.1109/ACCESS.2020.3010615, 10.1016/j.chb.2021.106822" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 transition resize-none bg-slate-50/50"></textarea>
+            <button type="button" onclick="handleImportDoi()" id="btnImportDoi" class="mt-2.5 w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-sm rounded-xl transition cursor-pointer shadow-sm">
+              🔗 Fetch Metadata from DOI
+            </button>
           </div>
 
           <div class="flex gap-3 pt-2">
@@ -301,6 +311,9 @@
             <button type="button" onclick="exportBibTeX()" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-xl transition cursor-pointer flex items-center gap-2">
               📥 Export BibTeX (.bib)
             </button>
+            <button type="button" onclick="exportRIS()" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-xl transition cursor-pointer flex items-center gap-2">
+              📥 Export RIS (.ris)
+            </button>
           </div>
         </div>
 
@@ -441,7 +454,7 @@
       console.error('PDF.js Worker Error:', e);
     }
 
-    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbzoRMcpokF3YGmZAcRSswA4BSUjOcbnvGkwaMgrGdKQuY902PxOjpTS1z8s5eOCsAwGLQ/exec";
+    const CONFIG_GAS_URL = "https://script.google.com/macros/s/AKfycbxWf3-1KIWVJFv_Mnj0EuGVo4nFaCf8Dx9pUvmsIJmFZr6LFEqeqoxmDMselhVjUdM2CA/exec";
     
     let globalEmail = "";
     let isUserUnlocked = false;
@@ -592,7 +605,7 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.13 (Unlocked)";
+          document.getElementById('appVersionText').innerText = "AI Research Suite v2.14 (Unlocked)";
           document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
           
           document.getElementById('authWidget').innerHTML = `
@@ -618,7 +631,7 @@
     function handleLogout() {
       globalEmail = "";
       isUserUnlocked = false;
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.13 (Guest)";
+      document.getElementById('appVersionText').innerText = "AI Research Suite v2.14 (Guest)";
       document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
       document.getElementById('authWidget').innerHTML = `
         <div class="flex items-center justify-between">
@@ -933,6 +946,65 @@
       });
       renderTable();
       alert(`Successfully added "${title}" to workspace memory!`);
+    }
+
+    // --- IMPORT BY DOI ---
+    async function handleImportDoi() {
+      const raw = document.getElementById('doiInput').value.trim();
+      const btn = document.getElementById('btnImportDoi');
+      if (!raw) {
+        showStatus("⚠️ Please enter at least one DOI.", "error");
+        return;
+      }
+
+      const doiList = raw.split(/[\n,]+/).map(d => d.trim()).filter(d => d);
+      if (doiList.length === 0) {
+        showStatus("⚠️ No valid DOI detected.", "error");
+        return;
+      }
+
+      btn.disabled = true;
+      let successCount = 0;
+      hideStatus();
+
+      for (let i = 0; i < doiList.length; i++) {
+        btn.innerText = `[${i + 1}/${doiList.length}] Fetching metadata...`;
+        try {
+          const res = await fetch(CONFIG_GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "lookup_doi", doi: doiList[i] })
+          });
+          const result = await res.json();
+          if (result.status === "error") throw new Error(result.message);
+
+          const p = result.data;
+          window.appCollectedData.push({
+            title: p.title || 'Untitled',
+            author: p.authors || 'Unknown Author',
+            year: String(p.year || 'n.d.'),
+            method: 'DOI Import (Crossref)',
+            findings: (p.abstract || 'No abstract available.').substring(0, 300),
+            gap: 'Imported via DOI',
+            selected: true
+          });
+          successCount++;
+          renderTable();
+        } catch (err) {
+          console.error(`DOI ${doiList[i]} failed:`, err.message);
+        }
+        if (i < doiList.length - 1) await sleep(600); // gentle pacing for Crossref
+      }
+
+      btn.disabled = false;
+      btn.innerText = "🔗 Fetch Metadata from DOI";
+
+      if (successCount > 0) {
+        document.getElementById('doiInput').value = "";
+        showStatus(`🎉 Successfully imported ${successCount}/${doiList.length} paper(s) via DOI.`, "success");
+      } else {
+        showStatus("❌ Failed to import any DOI. Check the DOI format and try again.", "error");
+      }
     }
 
     async function handleChatPapers() {
@@ -1294,6 +1366,43 @@
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "references.bib";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- EXPORT RIS ---
+    function getAuthorListForRIS(authorStr) {
+      if (!authorStr || authorStr === "Unknown Author") return ['Unknown Author'];
+      authorStr = authorStr.replace(/\s+and\s+/gi, ', ');
+      const names = authorStr.split(',').map(n => n.trim()).filter(n => n);
+      return names.map(n => {
+        const parts = n.split(/\s+/);
+        if (parts.length === 1) return n;
+        const last = parts[parts.length - 1];
+        const first = parts.slice(0, -1).join(' ');
+        return `${last}, ${first}`;
+      });
+    }
+
+    function exportRIS() {
+      const activePapers = getActiveWorkspacePapers();
+      if (activePapers.length === 0) return;
+
+      let ris = '';
+      activePapers.forEach(item => {
+        ris += 'TY  - JOUR\n';
+        getAuthorListForRIS(item.author).forEach(a => { ris += `AU  - ${a}\n`; });
+        ris += `PY  - ${item.year || ''}\n`;
+        ris += `TI  - ${item.title || 'Untitled Paper'}\n`;
+        if (item.findings) ris += `AB  - ${String(item.findings).replace(/\n/g, ' ')}\n`;
+        ris += `ER  - \n\n`;
+      });
+
+      const blob = new Blob([ris], { type: 'application/x-research-info-systems;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "references.ris";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
