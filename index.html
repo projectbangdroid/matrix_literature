@@ -55,6 +55,11 @@
           <span class="flex items-center gap-3"><span class="text-base">📝</span> Response to Reviewer</span>
           <span class="text-xs lock-icon">🔒</span>
         </button>
+        <!-- ADMIN ONLY: muncul hanya untuk role admin -->
+        <button onclick="switchTab('admin')" id="nav-admin" class="hidden w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-400 cursor-pointer">
+          <span class="flex items-center gap-3"><span class="text-base">📊</span> User Monitoring</span>
+          <span class="text-xs">🛡️</span>
+        </button>
       </nav>
     </div>
 
@@ -373,6 +378,46 @@
         </div>
       </section>
 
+      <!-- VIEW 8: ADMIN - USER MONITORING -->
+      <section id="view-admin" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 sm:p-8 space-y-5">
+          <div class="flex flex-wrap justify-between items-start gap-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-lg">🛡️ User Monitoring Dashboard</h3>
+              <p class="text-sm text-slate-500">Pantau pengguna terdaftar, role, aktivitas login, dan penggunaan workspace.</p>
+            </div>
+            <button onclick="loadUsers()" id="btnRefreshUsers" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl transition cursor-pointer shadow-sm">
+              🔄 Refresh
+            </button>
+          </div>
+
+          <div id="adminStats" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+
+          <input type="text" id="adminUserFilter" oninput="renderUsersTable()" placeholder="Cari email pengguna..." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-slate-50/50">
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                  <th class="p-3 font-bold">Pengguna</th>
+                  <th class="p-3 font-bold">Terdaftar</th>
+                  <th class="p-3 font-bold">Login Terakhir</th>
+                  <th class="p-3 font-bold">Total Login</th>
+                  <th class="p-3 font-bold">Papers</th>
+                  <th class="p-3 font-bold">Status</th>
+                  <th class="p-3 font-bold text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody" class="text-slate-600 divide-y divide-slate-100">
+                <tr><td colspan="7" class="p-6 text-center text-slate-400 text-sm">Klik "Refresh" untuk memuat data pengguna.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p id="adminStatusNote" class="text-[11px] text-slate-400"></p>
+        </div>
+      </section>
+
       <!-- Global Status Box -->
       <div id="statusBox" class="hidden p-4 rounded-xl text-sm font-medium transition text-left border shadow-xs"></div>
     </div>
@@ -512,6 +557,8 @@
     
     let globalEmail = "";
     let isUserUnlocked = false;
+    let globalUserRole = "guest";   // guest | user | admin
+    let isUserAdmin = false;
     window.appCollectedData = [];
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -792,19 +839,16 @@
         if (result.status === "success" && result.data.unlocked) {
           globalEmail = email;
           isUserUnlocked = true;
-          document.getElementById('appVersionText').innerText = "AI Research Suite v2.17 (Unlocked)";
-          document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
-          
-          document.getElementById('authWidget').innerHTML = `
-            <div class="space-y-1">
-              <span class="text-[11px] font-bold text-emerald-400 block truncate">✨ ${email}</span>
-              <button onclick="handleLogout()" class="text-[11px] text-slate-400 hover:text-red-400 underline cursor-pointer">Logout</button>
-            </div>
-          `;
+          globalUserRole = result.data.role || "user";
+          isUserAdmin = (globalUserRole === "admin");
+
+          applyRoleUI();
           closeLoginModal();
           updateSyncIndicator();
           await loadWorkspaceFromServer(false);
-          alert("🎉 Login successful! All features are now unlocked.");
+          alert(isUserAdmin
+            ? "🛡️ Login sebagai ADMIN berhasil. Menu User Monitoring sudah aktif."
+            : "🎉 Login successful! All features are now unlocked.");
         } else {
           throw new Error("Email not found in the whitelist sheet.");
         }
@@ -826,19 +870,13 @@
 
       globalEmail = "";
       isUserUnlocked = false;
+      globalUserRole = "guest";
+      isUserAdmin = false;
       workspaceSyncStatus = "idle";
       window.appCollectedData = []; // clear local workspace so the next user on this device starts clean
-      document.getElementById('appVersionText').innerText = "AI Research Suite v2.17 (Guest)";
-      document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '🔒');
-      document.getElementById('authWidget').innerHTML = `
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-amber-400">👤 Guest Mode</span>
-          <div class="flex gap-1.5">
-            <button onclick="openLoginModal()" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg transition font-semibold cursor-pointer">Login</button>
-            <button onclick="openRegisterModal()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg transition font-semibold cursor-pointer">Register</button>
-          </div>
-        </div>
-      `;
+      adminUsersCache = [];
+
+      applyRoleUI();
       renderTable();
       updateMemoryBadge();
       updateSyncIndicator();
@@ -846,928 +884,19 @@
       alert("You have logged out. Your workspace was saved to the cloud and cleared from this device.");
     }
 
-    function openRegisterModal() {
-      document.getElementById('registerModal').classList.remove('hidden');
-      document.getElementById('regStep1').classList.remove('hidden');
-      document.getElementById('regStep2').classList.add('hidden');
-      document.getElementById('regEmail').value = "";
-      document.getElementById('regCode').value = "";
-      document.getElementById('regError1').classList.add('hidden');
-      document.getElementById('regError2').classList.add('hidden');
-    }
-    function closeRegisterModal() {
-      document.getElementById('registerModal').classList.add('hidden');
-    }
-
-    async function requestVerificationCode() {
-      const email = document.getElementById('regEmail').value.trim();
-      const errBox = document.getElementById('regError1');
-      const btn = document.getElementById('btnSendCode');
-
-      errBox.classList.add('hidden');
-      if (!email || !email.includes('@')) {
-        errBox.innerText = "Please enter a valid email.";
-        errBox.classList.remove('hidden');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Sending code...";
-
-      try {
-        const response = await fetch(CONFIG_GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "send_code", userEmail: email })
-        });
-        const result = await response.json();
-
-        if (result.status === "success") {
-          document.getElementById('regStep1').classList.add('hidden');
-          document.getElementById('regStep2').classList.remove('hidden');
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (err) {
-        errBox.innerText = err.message;
-        errBox.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Send Verification Code";
-      }
-    }
-
-    async function verifyAndRegister() {
-      const email = document.getElementById('regEmail').value.trim();
-      const code = document.getElementById('regCode').value.trim();
-      const errBox = document.getElementById('regError2');
-      const btn = document.getElementById('btnVerifyReg');
-
-      errBox.classList.add('hidden');
-      if (!code || code.length !== 6) {
-        errBox.innerText = "Please enter the 6-digit code.";
-        errBox.classList.remove('hidden');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Verifying...";
-
-      try {
-        const response = await fetch(CONFIG_GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "verify_register", userEmail: email, code: code })
-        });
-        const result = await response.json();
-
-        if (result.status === "success") {
-          closeRegisterModal();
-          alert("🎉 Registration successful! Your email is now whitelisted. You can now log in.");
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (err) {
-        errBox.innerText = err.message;
-        errBox.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Verify & Register";
-      }
-    }
-
-    function switchTab(tab) {
-      if (tab !== 'matrix' && !isUserUnlocked) {
-        openLoginModal();
-        return;
-      }
-
-      ['matrix', 'search', 'synthesis', 'gap', 'chat', 'references', 'reviewer'].forEach(t => {
-        const viewEl = document.getElementById('view-' + t);
-        const navEl = document.getElementById('nav-' + t);
-        if (viewEl) viewEl.classList.add('hidden');
-        if (navEl) navEl.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition hover:bg-slate-800 text-slate-300 cursor-pointer";
-      });
-
-      const activeView = document.getElementById('view-' + tab);
-      const activeNav = document.getElementById('nav-' + tab);
-      if (activeView) activeView.classList.remove('hidden');
-      if (activeNav) activeNav.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition bg-indigo-600 text-white shadow-sm cursor-pointer";
-
-      const titles = {
-        matrix: ["Literature Review Matrix Generator", "Upload journal PDFs or paste text to extract metadata into a structured Excel matrix."],
-        search: ["Direct Academic Paper Search", "Search academic papers instantly and add them to your workspace memory."],
-        synthesis: ["Chapter 2 Auto-Synthesis", "Synthesize your workspace papers into a coherent academic literature review prose."],
-        gap: ["Research Gap & Novelty Finder", "Identify overarching research gaps and discover novel topic recommendations."],
-        chat: ["Chat with Workspace Papers", "Interact directly with the literature stored in your workspace memory."],
-        references: ["References & Citations", "Automatically generate formatted bibliographies and reference lists from your stored papers."],
-        reviewer: ["Response to Reviewer Generator", "Draft a professional, point-by-point response letter to reviewer or editor comments."]
-      };
-      document.getElementById('pageTitle').innerText = titles[tab][0];
-      document.getElementById('pageDesc').innerText = titles[tab][1];
-      
-      if (tab === 'references') {
-        renderReferences();
-      }
-      hideStatus();
-    }
-
-    function updateMemoryBadge() {
-      const total = window.appCollectedData.length;
-      const activeCount = window.appCollectedData.filter(item => item.selected !== false).length;
-      document.getElementById('memoryBadge').innerText = `${activeCount}/${total} Active Papers`;
-      if (total > 0) {
-        document.getElementById('btnDownload').classList.remove('hidden');
-      } else {
-        document.getElementById('btnDownload').classList.add('hidden');
-      }
-    }
-
-    function cleanOutput(val, fallbackText) {
-      if (!val || val === "") return fallbackText;
-      if (Array.isArray(val)) return val.join(", ");
-      if (typeof val === 'object') return JSON.stringify(val);
-      return String(val).trim();
-    }
-
-    function escapeHtml(unsafe) {
-      return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-
-    function formatAiOutput(val) {
-      if (!val) return "No data available.";
-      if (typeof val === 'string') return val;
-      if (Array.isArray(val)) {
-        return val.map((item, idx) => {
-          if (typeof item === 'object' && item !== null) {
-            return `${idx + 1}. ` + Object.entries(item).map(([k, v]) => `${k}: ${v}`).join(' | ');
-          }
-          return `${idx + 1}. ${String(item)}`;
-        }).join('\n\n');
-      }
-      if (typeof val === 'object') {
-        return Object.entries(val).map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}`).join('\n\n');
-      }
-      return String(val);
-    }
-
-    function renderTable() {
-      const tbody = document.getElementById('tableBody');
-      if (window.appCollectedData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400 text-sm">No papers extracted yet. Upload files or paste text above.</td></tr>';
-        return;
-      }
-      let html = '';
-      window.appCollectedData.forEach(row => {
-        const opacityClass = row.selected === false ? 'opacity-40 bg-slate-50' : '';
-        html += `<tr class="hover:bg-slate-50/80 transition ${opacityClass}">
-          <td class="p-3 font-medium text-slate-900">${escapeHtml(row.title)}</td>
-          <td class="p-3 text-slate-700">${escapeHtml(row.author)}</td>
-          <td class="p-3 text-slate-700">${escapeHtml(row.year)}</td>
-          <td class="p-3 text-slate-700">${escapeHtml(row.method)}</td>
-          <td class="p-3 text-slate-700">${escapeHtml(row.findings)}</td>
-          <td class="p-3 text-slate-700">${escapeHtml(row.gap)}</td>
-        </tr>`;
-      });
-      tbody.innerHTML = html;
-      updateMemoryBadge();
-    }
-
-    function downloadExcel() {
-      if (window.appCollectedData.length === 0) return;
-      let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-      html += '<head><meta charset="utf-8"/></head><body><table border="1">';
-      html += '<tr style="background-color: #f3f4f6; font-weight: bold; text-align: center;"><th>Title</th><th>Author</th><th>Year</th><th>Methodology</th><th>Findings</th><th>Research Gap</th></tr>';
-      window.appCollectedData.forEach(row => {
-        html += `<tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(row.author)}</td><td>${escapeHtml(row.year)}</td><td>${escapeHtml(row.method)}</td><td>${escapeHtml(row.findings)}</td><td>${escapeHtml(row.gap)}</td></tr>`;
-      });
-      html += '</table></body></html>';
-
-      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "Academic_Workspace_Matrix.xls";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    async function callGasProxy(payload) {
-      payload.userEmail = globalEmail;
-      const response = await fetch(CONFIG_GAS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      const result = await response.json();
-      if (result.status === "error") throw new Error(result.message);
-      return result.data;
-    }
-
-    async function handleSearchPapers(isLoadMore = false) {
-      const queryInput = document.getElementById('searchQuery').value.trim();
-      const resultsContainer = document.getElementById('searchResultsContainer');
-      
-      if (!queryInput && !currentSearchQuery) { 
-        alert('Please enter search keywords.'); 
-        return; 
-      }
-
-      if (!isLoadMore) {
-        currentSearchQuery = queryInput;
-        currentSearchOffset = 0;
-        resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">Searching Crossref database...</p>';
-      } else {
-        const loadMoreBtn = document.getElementById('loadMoreSearchBtn');
-        if (loadMoreBtn) loadMoreBtn.innerText = "Loading more papers...";
-      }
-
-      try {
-        const resultData = await callGasProxy({
-          action: "search",
-          searchQuery: currentSearchQuery,
-          offset: currentSearchOffset
-        });
-
-        const paperList = resultData.items || [];
-        if (paperList.length === 0 && !isLoadMore) {
-          resultsContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-6">No papers found. Try different keywords.</p>';
-          return;
-        }
-
-        let html = isLoadMore ? resultsContainer.innerHTML.replace(/<div id="loadMoreContainer">[\s\S]*?<\/div>/, '') : '';
-        
-        paperList.forEach((p) => {
-          const title = p.title || 'Untitled';
-          const authors = p.authors || 'Unknown Author';
-          const year = p.year || 'n.d.';
-          const abstract = p.abstract || 'No abstract available.';
-
-          html += `<div class="p-5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2.5">
-            <h5 class="font-bold text-slate-900 text-sm">${escapeHtml(title)}</h5>
-            <p class="text-xs text-slate-500 font-medium">Authors: ${escapeHtml(authors)} | Year: ${year} | Citations: ${p.citationCount || 0}</p>
-            <p class="text-xs text-slate-600 leading-relaxed line-clamp-3">${escapeHtml(abstract)}</p>
-            <button type="button" onclick="addPaperToWorkspace(${escapeHtml(JSON.stringify(title))}, ${escapeHtml(JSON.stringify(authors))}, '${year}', ${escapeHtml(JSON.stringify(abstract))})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition cursor-pointer shadow-xs">
-              + Add to Workspace Memory
-            </button>
-          </div>`;
-        });
-
-        currentSearchOffset = resultData.nextOffset || (currentSearchOffset + 10);
-
-        if (paperList.length > 0) {
-          html += `<div id="loadMoreContainer" class="pt-4 text-center">
-            <button type="button" id="loadMoreSearchBtn" onclick="handleSearchPapers(true)" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">
-              📥 Load More Results (+10)
-            </button>
-          </div>`;
-        }
-
-        resultsContainer.innerHTML = html;
-      } catch (err) {
-        if (!isLoadMore) {
-          resultsContainer.innerHTML = `<p class="text-sm text-red-500 text-center py-6">Error searching papers: ${escapeHtml(err.message)}</p>`;
-        } else {
-          alert(`Error loading more papers: ${err.message}`);
-          const loadMoreBtn = document.getElementById('loadMoreSearchBtn');
-          if (loadMoreBtn) loadMoreBtn.innerText = "📥 Load More Results (+10)";
-        }
-      }
-    }
-
-    async function addPaperToWorkspace(title, authors, year, abstract) {
-      if (!checkAndConfirmDuplicate(title, null)) return;
-
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
-
-      let method = 'Crossref API (Metadata-based)';
-      let findings = abstract.substring(0, 300) + (abstract.length > 300 ? '...' : '');
-      let gap = (targetLanguage === "English")
-        ? 'Not analyzed — add your Groq API key in the top bar to auto-generate the research gap.'
-        : 'Belum dianalisis — masukkan Groq API Key di bagian atas untuk menghasilkan research gap otomatis.';
-
-      const aiResult = await analyzeAbstractWithAI(apiKey, targetLanguage, title, abstract);
-      if (aiResult) {
-        method = cleanOutput(aiResult.method, fallbackText);
-        findings = cleanOutput(aiResult.findings, fallbackText);
-        gap = cleanOutput(aiResult.gap, fallbackText);
-      }
-
-      window.appCollectedData.push({
-        title: title,
-        author: authors,
-        year: String(year),
-        method: method,
-        findings: findings,
-        gap: gap,
-        selected: true
-      });
-      renderTable();
-      scheduleWorkspaceSave();
-      alert(`Successfully added "${title}" to workspace memory!` + (aiResult ? '' : (apiKey ? ' (No abstract available to analyze.)' : ' Tip: add your Groq API key to also auto-generate the research gap.')));
-    }
-
-    // --- IMPORT BY DOI ---
-    async function handleImportDoi() {
-      const raw = document.getElementById('doiInput').value.trim();
-      const btn = document.getElementById('btnImportDoi');
-      if (!raw) {
-        showStatus("⚠️ Please enter at least one DOI.", "error");
-        return;
-      }
-
-      const doiList = raw.split(/[\n,]+/).map(d => d.trim()).filter(d => d);
-      if (doiList.length === 0) {
-        showStatus("⚠️ No valid DOI detected.", "error");
-        return;
-      }
-
-      btn.disabled = true;
-      let successCount = 0;
-      let skippedDupCount = 0;
-      hideStatus();
-
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
-
-      for (let i = 0; i < doiList.length; i++) {
-        btn.innerText = `[${i + 1}/${doiList.length}] Fetching metadata...`;
-        try {
-          const res = await fetch(CONFIG_GAS_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "lookup_doi", doi: doiList[i] })
-          });
-          const result = await res.json();
-          if (result.status === "error") throw new Error(result.message);
-
-          const p = result.data;
-          if (!checkAndConfirmDuplicate(p.title, p.doi)) {
-            skippedDupCount++;
-            continue;
-          }
-
-          let method = 'DOI Import (Crossref metadata only)';
-          let findings = (p.abstract || 'No abstract available.').substring(0, 300);
-          let gap = (targetLanguage === "English")
-            ? 'Not analyzed — add your Groq API key in the top bar to auto-generate the research gap.'
-            : 'Belum dianalisis — masukkan Groq API Key di bagian atas untuk menghasilkan research gap otomatis.';
-
-          if (apiKey && p.abstract && p.abstract !== 'No abstract available.') {
-            btn.innerText = `[${i + 1}/${doiList.length}] Analyzing via AI...`;
-            const aiResult = await analyzeAbstractWithAI(apiKey, targetLanguage, p.title, p.abstract);
-            if (aiResult) {
-              method = cleanOutput(aiResult.method, fallbackText);
-              findings = cleanOutput(aiResult.findings, fallbackText);
-              gap = cleanOutput(aiResult.gap, fallbackText);
-            }
-          }
-
-          window.appCollectedData.push({
-            title: p.title || 'Untitled',
-            author: p.authors || 'Unknown Author',
-            year: String(p.year || 'n.d.'),
-            method: method,
-            findings: findings,
-            gap: gap,
-            doi: p.doi || doiList[i],
-            selected: true
-          });
-          successCount++;
-          renderTable();
-        } catch (err) {
-          console.error(`DOI ${doiList[i]} failed:`, err.message);
-        }
-        if (i < doiList.length - 1) await sleep(apiKey ? 1200 : 600); // gentle pacing for Crossref/Groq
-      }
-
-      btn.disabled = false;
-      btn.innerText = "🔗 Fetch Metadata from DOI";
-
-      if (successCount > 0) {
-        document.getElementById('doiInput').value = "";
-        const dupNote = skippedDupCount > 0 ? ` (${skippedDupCount} skipped as duplicate)` : '';
-        const tipNote = !apiKey ? ' 💡 Tip: add your Groq API key to also auto-generate the research gap.' : '';
-        showStatus(`🎉 Successfully imported ${successCount}/${doiList.length} paper(s) via DOI${dupNote}.${tipNote}`, "success");
-        scheduleWorkspaceSave();
-      } else if (skippedDupCount > 0) {
-        showStatus(`ℹ️ No new papers imported — ${skippedDupCount} were skipped as duplicates.`, "error");
-      } else {
-        showStatus("❌ Failed to import any DOI. Check the DOI format and try again.", "error");
-      }
-    }
-
-    async function handleChatPapers() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const query = document.getElementById('chatInput').value.trim();
-      const chatBox = document.getElementById('chatMessages');
-
-      const activePapers = getActiveWorkspacePapers();
-      if (!apiKey) { alert('Please enter your Groq API Key in the top bar.'); return; }
-      if (activePapers.length === 0) { alert('No active papers selected in workspace memory! Check at least one paper.'); return; }
-      if (!query) return;
-
-      chatBox.innerHTML += `<div class="p-3 bg-indigo-50 text-indigo-900 rounded-xl text-sm ml-auto max-w-xl shadow-xs"><strong>You:</strong> ${escapeHtml(query)}</div>`;
-      document.getElementById('chatInput').value = '';
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      const loadingId = 'loading-' + Date.now();
-      chatBox.innerHTML += `<div id="${loadingId}" class="p-3 bg-slate-100 text-slate-600 rounded-xl text-sm mr-auto max-w-xl animate-pulse">AI is analyzing active workspace papers...</div>`;
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      try {
-        const res = await callGasProxy({
-          action: "chat",
-          apiKey: apiKey,
-          targetLanguage: targetLanguage,
-          papersJson: JSON.stringify(activePapers),
-          userQuery: query
-        });
-        document.getElementById(loadingId).remove();
-        chatBox.innerHTML += `<div class="p-3 bg-white border border-slate-200 text-slate-800 rounded-xl text-sm mr-auto max-w-xl shadow-xs whitespace-pre-line"><strong>AI Assistant:</strong>\n${res.answer}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      } catch (err) {
-        document.getElementById(loadingId).remove();
-        chatBox.innerHTML += `<div class="p-3 bg-red-50 text-red-700 rounded-xl text-sm mr-auto max-w-xl">Error: ${escapeHtml(err.message)}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-    }
-
-    async function handleProcessMatrix() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const fileInput = document.getElementById('pdfFiles');
-      const textInput = document.getElementById('journalText');
-      const btn = document.getElementById('btnSubmitMatrix');
-
-      if (!apiKey) {
-        showStatus("⚠️ Please enter your Groq API Key first.", "error");
-        return;
-      }
-
-      let filesToProcess = fileInput && fileInput.files.length > 0 ? Array.from(fileInput.files) : [];
-      let manualText = textInput && textInput.value.trim() !== "" ? textInput.value.trim() : "";
-
-      if (filesToProcess.length === 0 && !manualText) {
-        showStatus("⚠️ Please upload at least one PDF or paste journal text.", "error");
-        return;
-      }
-
-      btn.disabled = true;
-      const fallbackText = (targetLanguage === "English") ? "Not found" : "Tidak ditemukan";
-      let successCount = 0;
-      let skippedDupCount = 0;
-      hideStatus();
-
-      try {
-        if (filesToProcess.length > 0) {
-          const total = filesToProcess.length;
-          showStatus(`⏳ Processing ${total} file(s)... Please wait.`, "success");
-
-          for (let i = 0; i < total; i++) {
-            btn.innerText = `[${i+1}/${total}] Extracting PDF text...`;
-            let text = "";
-            try {
-              text = await extractTextFromPdf(filesToProcess[i]);
-              text = text.replace(/[^\x20-\x7E\r\n]/g, " ");
-            } catch (e) {
-              console.error("PDF extraction error", e);
-              continue;
-            }
-
-            btn.innerText = `[${i+1}/${total}] Analyzing via AI...`;
-            try {
-              const res = await callGasProxy({
-                action: "extract",
-                apiKey: apiKey,
-                targetLanguage: targetLanguage,
-                journalText: text
-              });
-              const extractedTitle = cleanOutput(res.title, fallbackText);
-              if (!checkAndConfirmDuplicate(extractedTitle, null)) {
-                skippedDupCount++;
-              } else {
-                window.appCollectedData.push({
-                  title: extractedTitle,
-                  author: cleanOutput(res.author, fallbackText),
-                  year: cleanOutput(res.year, fallbackText),
-                  method: cleanOutput(res.method, fallbackText),
-                  findings: cleanOutput(res.findings, fallbackText),
-                  gap: cleanOutput(res.gap, fallbackText),
-                  selected: true
-                });
-                successCount++;
-                renderTable();
-              }
-            } catch (err) {
-              if (err.message.includes("Rate limit")) {
-                showStatus(`⏳ Rate limit hit. Pausing 12s before retrying file ${i+1}...`, "error");
-                btn.innerText = `[${i+1}/${total}] Rate limit! Waiting 12s...`;
-                await sleep(12000);
-                i--; 
-                continue;
-              } else {
-                throw err;
-              }
-            }
-
-            if (i < total - 1) {
-              let countdown = 10;
-              while (countdown > 0) {
-                btn.innerText = `[${i+1}/${total}] Cooldown: Waiting ${countdown}s...`;
-                await sleep(1000);
-                countdown--;
-              }
-            }
-          }
-        } else if (manualText) {
-          btn.innerText = "Analyzing text via AI...";
-          const res = await callGasProxy({
-            action: "extract",
-            apiKey: apiKey,
-            targetLanguage: targetLanguage,
-            journalText: manualText
-          });
-          const extractedTitle = cleanOutput(res.title, fallbackText);
-          if (!checkAndConfirmDuplicate(extractedTitle, null)) {
-            skippedDupCount++;
-          } else {
-            window.appCollectedData.push({
-              title: extractedTitle,
-              author: cleanOutput(res.author, fallbackText),
-              year: cleanOutput(res.year, fallbackText),
-              method: cleanOutput(res.method, fallbackText),
-              findings: cleanOutput(res.findings, fallbackText),
-              gap: cleanOutput(res.gap, fallbackText),
-              selected: true
-            });
-            successCount++;
-            renderTable();
-          }
-        }
-
-        if (successCount > 0) {
-          const dupNote = skippedDupCount > 0 ? ` (${skippedDupCount} skipped as duplicate)` : '';
-          showStatus(`🎉 Successfully extracted and added ${successCount} paper(s) to workspace memory!${dupNote}`, "success");
-          fileInput.value = "";
-          textInput.value = "";
-          scheduleWorkspaceSave();
-        } else if (skippedDupCount > 0) {
-          showStatus(`ℹ️ No new papers added — ${skippedDupCount} were skipped as duplicates.`, "error");
-        } else {
-          showStatus("⚠️ No papers were successfully processed.", "error");
-        }
-      } catch (err) {
-        showStatus(`❌ Error: ${err.message}`, "error");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Extract & Add to Workspace (.xls)";
-      }
-    }
-
-    async function handleAutoSynthesis() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const btn = document.getElementById('btnSynthesis');
-      const activePapers = getActiveWorkspacePapers();
-
-      if (!apiKey) { alert('Please enter your Groq API Key.'); return; }
-      if (activePapers.length === 0) { alert('No active papers selected in workspace memory! Check at least one paper.'); return; }
-
-      btn.disabled = true;
-      btn.innerText = "Synthesizing Chapter 2...";
-      hideStatus();
-
-      try {
-        const res = await callGasProxy({
-          action: "synthesis",
-          apiKey: apiKey,
-          targetLanguage: targetLanguage,
-          papersJson: JSON.stringify(activePapers)
-        });
-        document.getElementById('synthesisContent').innerText = res.synthesisText || "No synthesis generated.";
-        document.getElementById('synthesisResultBox').classList.remove('hidden');
-        showStatus("🎉 Academic Chapter 2 synthesis generated successfully!", "success");
-      } catch (err) {
-        showStatus(`❌ Error: ${err.message}`, "error");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "✨ Generate Chapter 2 Synthesis";
-      }
-    }
-
-    async function handleGapFinder() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const methodologyFilter = document.getElementById('methodologyFilter').value;
-      const btn = document.getElementById('btnGap');
-      const activePapers = getActiveWorkspacePapers();
-
-      if (!apiKey) { alert('Please enter your Groq API Key.'); return; }
-      if (activePapers.length === 0) { alert('No active papers selected in workspace memory! Check at least one paper.'); return; }
-
-      btn.disabled = true;
-      btn.innerText = "Analyzing Gaps & Titles...";
-      hideStatus();
-
-      try {
-        const res = await callGasProxy({
-          action: "gap",
-          apiKey: apiKey,
-          targetLanguage: targetLanguage,
-          methodologyFilter: methodologyFilter,
-          papersJson: JSON.stringify(activePapers)
-        });
-        
-        document.getElementById('gapOverviewContent').innerText = formatAiOutput(res.gapOverview);
-        document.getElementById('gapRecsContent').innerText = formatAiOutput(res.recommendations);
-        document.getElementById('gapTitlesContent').innerText = formatAiOutput(res.researchTitles);
-        
-        document.getElementById('gapResultBox').classList.remove('hidden');
-        showStatus("🎉 Research gap analysis and title recommendations completed!", "success");
-      } catch (err) {
-        showStatus(`❌ Error: ${err.message}`, "error");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "💡 Analyze Gaps & Recommend Titles";
-      }
-    }
-
-    function copyTitles() {
-      const text = document.getElementById('gapTitlesContent').innerText;
-      navigator.clipboard.writeText(text);
-      alert("Titles copied to clipboard!");
-    }
-
-    // --- RESPONSE TO REVIEWER ---
-    async function handleResponseToReviewer() {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      const targetLanguage = document.getElementById('targetLanguage').value;
-      const comments = document.getElementById('reviewerComments').value.trim();
-      const revisions = document.getElementById('revisionNotes').value.trim();
-      const tone = document.getElementById('reviewerTone').value;
-      const btn = document.getElementById('btnReviewer');
-
-      if (!apiKey) { alert('Please enter your Groq API Key.'); return; }
-      if (!comments) { alert('Please paste the reviewer/editor comments first.'); return; }
-
-      btn.disabled = true;
-      btn.innerText = "Drafting response letter...";
-      hideStatus();
-
-      try {
-        const res = await callGasProxy({
-          action: "response_reviewer",
-          apiKey: apiKey,
-          targetLanguage: targetLanguage,
-          reviewerComments: comments,
-          revisionNotes: revisions,
-          tone: tone
-        });
-        document.getElementById('reviewerResponseContent').innerText = res.responseText || "No response generated.";
-        document.getElementById('reviewerResultBox').classList.remove('hidden');
-        showStatus("🎉 Response to reviewer letter generated successfully!", "success");
-      } catch (err) {
-        showStatus(`❌ Error: ${err.message}`, "error");
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "📝 Generate Response to Reviewer";
-      }
-    }
-
-    function copyReviewerResponse() {
-      const text = document.getElementById('reviewerResponseContent').innerText;
-      navigator.clipboard.writeText(text);
-      alert("Response letter copied to clipboard!");
-    }
-    // ---------------------------------
-
-    function formatAuthors(authorStr, style) {
-      if (!authorStr || authorStr === "Unknown Author") return "Unknown Author";
-      
-      authorStr = authorStr.replace(/\s+and\s+/gi, ', ');
-      let names = authorStr.split(',').map(n => n.trim()).filter(n => n);
-      if (names.length === 0) return authorStr;
-
-      let formatted = names.map(n => {
-        let parts = n.split(/\s+/);
-        if (parts.length === 1) return n;
-        let lastName = parts[parts.length - 1];
-        let initials = parts.slice(0, parts.length - 1).map(p => p.charAt(0).toUpperCase() + '.').join(' ');
-        
-        if (style === 'APA') {
-          return `${lastName}, ${initials}`;
-        } else {
-          return `${initials} ${lastName}`;
-        }
-      });
-
-      if (style === 'APA') {
-        if (formatted.length === 1) return formatted[0];
-        if (formatted.length === 2) return `${formatted[0]} & ${formatted[1]}`;
-        if (formatted.length <= 20) {
-          return formatted.slice(0, -1).join(', ') + ', & ' + formatted[formatted.length - 1];
-        } else {
-          return formatted.slice(0, 19).join(', ') + ', ... ' + formatted[formatted.length - 1];
-        }
-      } else {
-        if (formatted.length === 1) return formatted[0];
-        if (formatted.length === 2) return `${formatted[0]} and ${formatted[1]}`;
-        if (formatted.length > 3) {
-          return `${formatted[0]} et al.`;
-        }
-        return formatted.slice(0, -1).join(', ') + ', and ' + formatted[formatted.length - 1];
-      }
-    }
-
-    function renderReferences() {
-      const container = document.getElementById('referencesListContent');
-      const activePapers = getActiveWorkspacePapers();
-      if (activePapers.length === 0) {
-        container.innerHTML = '<div class="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-slate-200">No active papers selected in workspace memory.</div>';
-        return;
-      }
-
-      const style = document.getElementById('citationStyle').value;
-      let html = '';
-
-      const sorted = [...activePapers].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
-
-      sorted.forEach((item, index) => {
-        let citation = '';
-        const formattedAuthor = formatAuthors(item.author, style);
-        const year = item.year || "n.d.";
-        const title = item.title || "Untitled Paper";
-
-        if (style === 'APA') {
-          citation = `${formattedAuthor} (${year}). <em>${title}</em>.`;
-        } else if (style === 'IEEE') {
-          citation = `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.`;
-        } else if (style === 'Harvard') {
-          citation = `${formattedAuthor} (${year}) <em>${title}</em>.`;
-        }
-
-        html += `<div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div class="flex-1 text-slate-800 text-sm leading-relaxed">${citation}</div>
-          <button type="button" onclick="copySingleRef(${index}, '${style}')" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition shrink-0 cursor-pointer">
-            📋 Copy
-          </button>
-        </div>`;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function copySingleRef(index, style) {
-      const activePapers = getActiveWorkspacePapers();
-      const sorted = [...activePapers].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
-      const item = sorted[index];
-      const formattedAuthor = formatAuthors(item.author, style);
-      const year = item.year || "n.d.";
-      const title = item.title || "Untitled Paper";
-
-      let citation = '';
-      if (style === 'APA') citation = `${formattedAuthor} (${year}). ${title}.`;
-      else if (style === 'IEEE') citation = `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.`;
-      else if (style === 'Harvard') citation = `${formattedAuthor} (${year}) ${title}.`;
-
-      navigator.clipboard.writeText(citation);
-      alert("Citation copied to clipboard!");
-    }
-
-    function copyAllReferences() {
-      const activePapers = getActiveWorkspacePapers();
-      if (activePapers.length === 0) return;
-      const style = document.getElementById('citationStyle').value;
-      const sorted = [...activePapers].sort((a, b) => (a.author || "").localeCompare(b.author || ""));
-      
-      let allText = '';
-      sorted.forEach((item, index) => {
-        const formattedAuthor = formatAuthors(item.author, style);
-        const year = item.year || "n.d.";
-        const title = item.title || "Untitled Paper";
-        if (style === 'APA') allText += `${formattedAuthor} (${year}). ${title}.\n`;
-        else if (style === 'IEEE') allText += `[${index + 1}] ${formattedAuthor}, "${title}," ${year}.\n`;
-        else if (style === 'Harvard') allText += `${formattedAuthor} (${year}) ${title}.\n`;
-      });
-
-      navigator.clipboard.writeText(allText);
-      alert("All references copied to clipboard!");
-    }
-
-    function exportBibTeX() {
-      const activePapers = getActiveWorkspacePapers();
-      if (activePapers.length === 0) return;
-      let bib = '';
-      activePapers.forEach((item, index) => {
-        const firstAuthorName = (item.author || 'author').split(',')[0].split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-        const citeKey = `${firstAuthorName}${item.year || '2026'}`;
-        bib += `@article{${citeKey},\n`;
-        bib += `  title={${item.title}},\n`;
-        bib += `  author={${item.author}},\n`;
-        bib += `  year={${item.year}}\n`;
-        bib += `}\n\n`;
-      });
-
-      const blob = new Blob([bib], { type: 'text/plain;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "references.bib";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // --- EXPORT RIS ---
-    function getAuthorListForRIS(authorStr) {
-      if (!authorStr || authorStr === "Unknown Author") return ['Unknown Author'];
-      authorStr = authorStr.replace(/\s+and\s+/gi, ', ');
-      const names = authorStr.split(',').map(n => n.trim()).filter(n => n);
-      return names.map(n => {
-        const parts = n.split(/\s+/);
-        if (parts.length === 1) return n;
-        const last = parts[parts.length - 1];
-        const first = parts.slice(0, -1).join(' ');
-        return `${last}, ${first}`;
-      });
-    }
-
-    function exportRIS() {
-      const activePapers = getActiveWorkspacePapers();
-      if (activePapers.length === 0) return;
-
-      let ris = '';
-      activePapers.forEach(item => {
-        ris += 'TY  - JOUR\n';
-        getAuthorListForRIS(item.author).forEach(a => { ris += `AU  - ${a}\n`; });
-        ris += `PY  - ${item.year || ''}\n`;
-        ris += `TI  - ${item.title || 'Untitled Paper'}\n`;
-        if (item.findings) ris += `AB  - ${String(item.findings).replace(/\n/g, ' ')}\n`;
-        ris += `ER  - \n\n`;
-      });
-
-      const blob = new Blob([ris], { type: 'application/x-research-info-systems;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "references.ris";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function copySynthesis() {
-      const text = document.getElementById('synthesisContent').innerText;
-      navigator.clipboard.writeText(text);
-      alert("Synthesis text copied to clipboard!");
-    }
-
-    function extractTextFromPdf(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function() {
-          const typedarray = new Uint8Array(this.result);
-          pdfjsLib.getDocument(typedarray).promise.then(async function(pdf) {
-            try {
-              const pagesToRead = pdf.numPages; // full document, not just first 2 pages
-              let pageTexts = new Array(pagesToRead);
-              for (let i = 1; i <= pagesToRead; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                pageTexts[i - 1] = textContent.items.map(item => item.str).join(" ");
-              }
-              let fullText = pageTexts.join("\n");
-              // Safety cap so we don't blow past the AI model's context window on very long papers.
-              // Keeps the beginning (title/abstract/intro) and a slice further in (methods/results/discussion).
-              const MAX_CHARS = 18000;
-              if (fullText.length > MAX_CHARS) {
-                const headSlice = fullText.slice(0, MAX_CHARS * 0.6);
-                const tailSlice = fullText.slice(-(MAX_CHARS * 0.4));
-                fullText = headSlice + "\n...[truncated for length]...\n" + tailSlice;
-              }
-              resolve(fullText);
-            } catch (err) {
-              reject(err);
-            }
-          }).catch(reject);
-        };
-        reader.readAsArrayBuffer(file);
-      });
-    }
-
-    function showStatus(msg, type) {
-      const box = document.getElementById('statusBox');
-      box.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200');
-      box.innerText = msg;
-      box.classList.add(type === "success" ? 'bg-emerald-50' : 'bg-red-50', type === "success" ? 'text-emerald-800' : 'text-red-800');
-    }
-
-    function hideStatus() {
-      document.getElementById('statusBox').classList.add('hidden');
-    }
-  </script>
-</body>
-</html>
+    // --- ROLE / AUTH UI ---
+    function applyRoleUI() {
+      const versionEl = document.getElementById('appVersionText');
+      const adminNav = document.getElementById('nav-admin');
+
+      if (isUserUnlocked) {
+        versionEl.innerText = isUserAdmin
+          ? "AI Research Suite v2.17 (Admin)"
+          : "AI Research Suite v2.17 (Unlocked)";
+        document.querySelectorAll('.lock-icon').forEach(el => el.innerText = '✨');
+        if (adminNav) adminNav.classList.toggle('hidden', !isUserAdmin);
+
+        document.getElementById('authWidget').innerHTML = `
+          <div class="space-y-1">
+            <span class="text-[11px] font-bold ${isUserAdmin ? 'text-amber-400' : 'text-emerald-400'} block truncate">
+              ${isUserAdmin ? '🛡️
